@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TECSOLED · Búsqueda</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-breadcrumb">
+          <span>TECSOLED ERP</span>
+          <span class="topbar-sep">/</span>
+          <span>Búsqueda</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbarDate"></span>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="page-head fade-up">
+        <p class="page-eyebrow">Operativa</p>
+        <h1 class="page-title">BÚSQUEDA</h1>
+        <p class="page-sub">Consulta stock, ubicación y precios en tiempo real</p>
+      </div>
+
+      <!-- Caja de búsqueda -->
+      <div class="search-box fade-up">
+        <div class="search-box-inner">
+          <p class="search-box-label">Consulta ERP</p>
+          <h2>¿Qué producto necesitas?</h2>
+          <div class="search-row">
+            <div class="ac-wrapper" id="acWrapper">
+              <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input class="search-input" type="text" id="searchInput"
+                  placeholder="Referencia o nombre del producto..." autocomplete="off" />
+              </div>
+              <div class="ac-drop" id="acDrop" style="display:none"></div>
+            </div>
+            <button class="btn-buscar" id="searchBtn">BUSCAR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado inicial -->
+      <div id="initialState" class="card fade-up">
+        <div class="card-body">
+          <div class="empty">
+            <div class="empty-ico">🔍</div>
+            <h3>LISTO PARA BUSCAR</h3>
+            <p>Escribe una referencia como <strong>LED-50W-E27</strong> o un nombre como <strong>panel led</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultados -->
+      <div id="resultsSection" style="display:none">
+        <div class="results-bar">
+          <p class="results-label" id="resultsLabel"></p>
+          <button class="btn-ghost" id="clearBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Limpiar
+          </button>
+        </div>
+        <div class="prod-list" id="prodList"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/sidebar.js"></script>
+<script src="../js/productos.js"></script>
+</body>
+</html>
