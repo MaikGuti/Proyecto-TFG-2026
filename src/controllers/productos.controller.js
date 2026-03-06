@@ -106,4 +106,21 @@ const despiece = async (req, res, next) => {
   }
 };
 
-module.exports = { buscar, autocompletar, detalle, despiece };
+/**
+ * GET /api/productos/alertas-stock
+ * Artículos con stock por debajo del mínimo
+ */
+const alertasStock = async (_req, res, next) => {
+  try {
+    const alertas = await productosService.getAlertasStock();
+    res.json({
+      success: true,
+      data: alertas,
+      total: alertas.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { buscar, autocompletar, detalle, despiece, alertasStock };

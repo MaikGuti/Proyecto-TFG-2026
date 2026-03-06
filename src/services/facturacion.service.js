@@ -1,142 +1,167 @@
 // src/services/facturacion.service.js
-//
-// ESTADO ACTUAL: Datos mock
-// MAÑANA: Activar queries reales contra SQL Server del ERP
 
-// const { getPool, sql } = require('../config/database');
+const { getPool, sql } = require('../config/database');
 
-// =============================================
-// HELPERS
-// =============================================
+const NOMBRES_MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 const getPeriodoFechas = (periodo) => {
   const hoy = new Date();
-  const anioActual = hoy.getFullYear();
-  const mesActual = hoy.getMonth() + 1;
+  const anio = hoy.getFullYear();
+  const mes = hoy.getMonth(); // 0-based
 
   switch (periodo) {
     case 'mes':
       return {
-        desde: new Date(anioActual, mesActual - 1, 1),
-        hasta: new Date(anioActual, mesActual, 0),
+        desde: new Date(anio, mes, 1),
+        hasta: new Date(anio, mes + 1, 0),
       };
     case 'trimestre': {
-      const trimestre = Math.floor((mesActual - 1) / 3);
+      const trim = Math.floor(mes / 3);
       return {
-        desde: new Date(anioActual, trimestre * 3, 1),
-        hasta: new Date(anioActual, trimestre * 3 + 3, 0),
+        desde: new Date(anio, trim * 3, 1),
+        hasta: new Date(anio, trim * 3 + 3, 0),
       };
     }
     case 'anio':
       return {
-        desde: new Date(anioActual, 0, 1),
-        hasta: new Date(anioActual, 11, 31),
+        desde: new Date(anio, 0, 1),
+        hasta: new Date(anio, 11, 31),
       };
     default:
       return getPeriodoFechas('mes');
   }
 };
 
-// =============================================
-// FUNCIONES DEL SERVICIO
-// =============================================
-
 /**
- * Dashboard principal de facturación.
- *
- * QUERY REAL EJEMPLO (ajustar según estructura del ERP):
- * SELECT
- *   SUM(ImporteTotal) AS totalFacturado,
- *   COUNT(*)          AS numFacturas,
- *   AVG(ImporteTotal) AS ticketMedio
- * FROM Facturas
- * WHERE FechaFactura BETWEEN @desde AND @hasta
- *   AND TipoDocumento = 'FAC'
- *   AND Anulada = 0
+ * Dashboard principal de facturación para un periodo.
+ * Tabla: sales_invoice (company_id=1, cancel_date IS NULL)
  */
 const getDashboard = async (periodo) => {
   const { desde, hasta } = getPeriodoFechas(periodo);
+  const pool = getPool();
 
-  // TODO: Activar cuando tengamos el ERP
-  // const pool = getPool();
-  // const result = await pool.request()
-  //   .input('desde', sql.Date, desde)
-  //   .input('hasta', sql.Date, hasta)
-  //   .query(`
-  //     SELECT
-  //       SUM(ImporteTotal) AS totalFacturado,
-  //       COUNT(*)          AS numFacturas,
-  //       AVG(ImporteTotal) AS ticketMedio
-  //     FROM Facturas
-  //     WHERE FechaFactura BETWEEN @desde AND @hasta
-  //       AND TipoDocumento = 'FAC'
-  //       AND Anulada = 0
-  //   `);
-  // return result.recordset[0];
+  // Formatear fechas como strings YYYY-MM-DD para evitar desfases de zona horaria UTC
+  const desdeStr = `${desde.getFullYear()}-${String(desde.getMonth() + 1).padStart(2, '0')}-${String(desde.getDate()).padStart(2, '0')}`;
+  const hastaStr = `${hasta.getFullYear()}-${String(hasta.getMonth() + 1).padStart(2, '0')}-${String(hasta.getDate()).padStart(2, '0')}`;
 
-  // MOCK temporal
+  const result = await pool.request()
+    .input('desde', sql.VarChar(10), desdeStr)
+    .input('hasta', sql.VarChar(10), hastaStr)
+    .query(`
+      SELECT
+        COUNT(*)          AS numFacturas,
+        COALESCE(SUM(total_amount), 0) AS totalFacturado,
+        COALESCE(AVG(total_amount), 0) AS ticketMedio
+      FROM sales_invoice
+      WHERE company_id  = 1
+        AND cancel_date IS NULL
+        AND CONVERT(date, issue_date) >= @desde
+        AND CONVERT(date, issue_date) <= @hasta
+    `);
+
+  const row = result.recordset[0];
   return {
     periodo,
-    desde: desde.toISOString().split('T')[0],
-    hasta: hasta.toISOString().split('T')[0],
-    totalFacturado: 48750.25,
-    numFacturas: 87,
-    ticketMedio: 560.35,
+    desde: desdeStr,
+    hasta: hastaStr,
+    numFacturas:    row.numFacturas,
+    totalFacturado: parseFloat(row.totalFacturado),
+    ticketMedio:    parseFloat(row.ticketMedio),
   };
 };
 
 /**
- * Evolución mensual de facturación de un año completo.
- * Devuelve array de 12 meses con el total de cada uno.
+ * Evolución mensual de un año completo (12 meses).
+ * Meses sin actividad se rellenan con ceros.
  */
 const getEvolucionMensual = async (anio) => {
-  // TODO: Query real
-  // const pool = getPool();
-  // const result = await pool.request()
-  //   .input('anio', sql.Int, anio)
-  //   .query(`
-  //     SELECT
-  //       MONTH(FechaFactura) AS mes,
-  //       SUM(ImporteTotal)   AS total,
-  //       COUNT(*)            AS numFacturas
-  //     FROM Facturas
-  //     WHERE YEAR(FechaFactura) = @anio
-  //       AND TipoDocumento = 'FAC'
-  //       AND Anulada = 0
-  //     GROUP BY MONTH(FechaFactura)
-  //     ORDER BY mes
-  //   `);
-  // return result.recordset;
+  const pool = getPool();
 
-  // MOCK temporal - Evolución de 12 meses
-  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  return meses.map((nombre, i) => ({
-    mes: i + 1,
-    nombreMes: nombre,
-    total: Math.floor(Math.random() * 30000) + 20000,
-    numFacturas: Math.floor(Math.random() * 50) + 40,
-  }));
+  const result = await pool.request()
+    .input('anio', sql.Int, anio)
+    .query(`
+      SELECT
+        MONTH(issue_date)              AS mes,
+        COALESCE(SUM(total_amount), 0) AS total,
+        COUNT(*)                       AS numFacturas
+      FROM sales_invoice
+      WHERE company_id  = 1
+        AND cancel_date IS NULL
+        AND YEAR(issue_date) = @anio
+      GROUP BY MONTH(issue_date)
+      ORDER BY mes
+    `);
+
+  // Rellenar los 12 meses aunque alguno no tenga datos
+  const porMes = {};
+  result.recordset.forEach(r => { porMes[r.mes] = r; });
+
+  return Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1;
+    return {
+      mes:         m,
+      nombreMes:   NOMBRES_MES[i],
+      total:       porMes[m] ? parseFloat(porMes[m].total) : 0,
+      numFacturas: porMes[m] ? porMes[m].numFacturas : 0,
+    };
+  });
 };
 
 /**
- * Comparativa entre periodos (mes actual vs anterior, año actual vs anterior).
+ * Comparativa mes actual vs mes anterior, y año actual vs año anterior.
+ * Una sola query con expresiones CASE para ambos periodos.
  */
 const getComparativa = async () => {
-  // TODO: Query real con CTEs para calcular ambos periodos en una sola query
+  const pool = getPool();
 
-  // MOCK temporal
+  const result = await pool.request().query(`
+    SELECT
+      -- Mes actual
+      COALESCE(SUM(CASE WHEN issue_date >= DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE()),   0)
+                        AND  issue_date <  DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE())+1, 0)
+                        THEN total_amount END), 0) AS totalMesActual,
+      COUNT(CASE WHEN issue_date >= DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE()),   0)
+                 AND  issue_date <  DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE())+1, 0)
+                 THEN 1 END)                        AS facturasMesActual,
+      -- Mes anterior
+      COALESCE(SUM(CASE WHEN issue_date >= DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE())-1, 0)
+                        AND  issue_date <  DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE()),   0)
+                        THEN total_amount END), 0) AS totalMesAnterior,
+      COUNT(CASE WHEN issue_date >= DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE())-1, 0)
+                 AND  issue_date <  DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE()),   0)
+                 THEN 1 END)                        AS facturasMesAnterior,
+      -- Año actual
+      COALESCE(SUM(CASE WHEN YEAR(issue_date) = YEAR(GETDATE()) THEN total_amount END), 0) AS totalAnioActual,
+      COUNT(CASE WHEN YEAR(issue_date) = YEAR(GETDATE()) THEN 1 END)                        AS facturasAnioActual,
+      -- Año anterior
+      COALESCE(SUM(CASE WHEN YEAR(issue_date) = YEAR(GETDATE())-1 THEN total_amount END), 0) AS totalAnioAnterior,
+      COUNT(CASE WHEN YEAR(issue_date) = YEAR(GETDATE())-1 THEN 1 END)                        AS facturasAnioAnterior
+    FROM sales_invoice
+    WHERE company_id  = 1
+      AND cancel_date IS NULL
+  `);
+
+  const r = result.recordset[0];
+
+  const variacionMes  = r.totalMesAnterior > 0
+    ? parseFloat(((r.totalMesActual - r.totalMesAnterior) / r.totalMesAnterior * 100).toFixed(1))
+    : null;
+  const variacionAnio = r.totalAnioAnterior > 0
+    ? parseFloat(((r.totalAnioActual - r.totalAnioAnterior) / r.totalAnioAnterior * 100).toFixed(1))
+    : null;
+
   return {
     mes: {
-      actual: { total: 48750.25, numFacturas: 87 },
-      anterior: { total: 42100.00, numFacturas: 79 },
-      variacionPorcentaje: 15.8,
-      tendencia: 'subida',
+      actual:              { total: parseFloat(r.totalMesActual),   numFacturas: r.facturasMesActual },
+      anterior:            { total: parseFloat(r.totalMesAnterior), numFacturas: r.facturasMesAnterior },
+      variacionPorcentaje: variacionMes,
+      tendencia:           variacionMes === null ? 'neutral' : variacionMes >= 0 ? 'subida' : 'bajada',
     },
     anio: {
-      actual: { total: 285400.00, numFacturas: 512 },
-      anterior: { total: 260800.00, numFacturas: 478 },
-      variacionPorcentaje: 9.4,
-      tendencia: 'subida',
+      actual:              { total: parseFloat(r.totalAnioActual),   numFacturas: r.facturasAnioActual },
+      anterior:            { total: parseFloat(r.totalAnioAnterior), numFacturas: r.facturasAnioAnterior },
+      variacionPorcentaje: variacionAnio,
+      tendencia:           variacionAnio === null ? 'neutral' : variacionAnio >= 0 ? 'subida' : 'bajada',
     },
   };
 };

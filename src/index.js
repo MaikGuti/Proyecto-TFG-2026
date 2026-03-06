@@ -4,13 +4,15 @@
 
 require('dotenv').config();
 
+const path    = require('path');
 const express = require('express');
-const helmet = require('helmet');
-const cors = require('cors');
-const morgan = require('morgan');
+const helmet  = require('helmet');
+const cors    = require('cors');
+const morgan  = require('morgan');
 
 const logger = require('./config/logger');
 const { connectERP, closeConnection } = require('./config/database');
+const { initDB: initUsuariosDB } = require('./config/database-usuarios');
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
 
 // Rutas
@@ -25,12 +27,17 @@ const PORT = process.env.PORT || 3000;
 // MIDDLEWARES DE SEGURIDAD Y PARSEO
 // =============================================
 
-// Cabeceras de seguridad HTTP
-app.use(helmet());
+// Cabeceras de seguridad HTTP (relajamos CSP para que el frontend cargue Chart.js desde CDN)
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
 
-// CORS - Solo permite el origen del frontend
+// Ficheros estáticos del frontend (login.html, pages/, js/, css/)
+app.use(express.static(path.join(__dirname, '..')));
+
+// CORS (para accesos externos a la API)
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5500',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -74,6 +81,10 @@ app.use(errorHandler);
 
 const start = async () => {
   try {
+    // Inicializar BD local de usuarios (SQLite)
+    initUsuariosDB();
+    logger.info('✅ BD de usuarios (SQLite) inicializada');
+
     // Intentar conectar al ERP
     // Si no hay credenciales aún, lo saltamos con aviso
     if (process.env.DB_SERVER && process.env.DB_USER) {

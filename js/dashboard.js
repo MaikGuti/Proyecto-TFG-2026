@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadKPIs('mes');
   await loadChart();
   await loadComp();
+  await loadAlertasStock();
 });
 
 async function loadKPIs(periodo) {
@@ -168,6 +169,62 @@ function compBlock(titulo, d) {
         <span class="comp-pct ${up ? 'up' : 'down'}">${up ? '↑' : '↓'} ${pct}%</span>
       </div>
     </div>`;
+}
+
+async function loadAlertasStock() {
+  const el    = document.getElementById('alertasContent');
+  const badge = document.getElementById('alertasBadge');
+  try {
+    const res  = await fetch(`${API_URL}/productos/alertas-stock`, {
+      headers: { Authorization: `Bearer ${Auth.getToken()}` },
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error();
+
+    const items = data.data;
+
+    badge.textContent = `${items.length} artículo${items.length !== 1 ? 's' : ''}`;
+    badge.style.display = 'inline-flex';
+
+    if (!items.length) {
+      el.innerHTML = `
+        <div class="empty" style="padding:28px">
+          <div class="empty-ico">✅</div>
+          <h3>SIN ALERTAS</h3>
+          <p>Todos los artículos están por encima del stock mínimo</p>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div style="overflow-x:auto">
+        <table class="despiece-table">
+          <thead>
+            <tr>
+              <th>Referencia</th>
+              <th>Descripción</th>
+              <th>Familia</th>
+              <th style="text-align:right">Stock actual</th>
+              <th style="text-align:right">Mínimo</th>
+              <th style="text-align:right">Déficit</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(a => `
+              <tr onclick="window.location.href='/pages/producto.html?ref=${encodeURIComponent(a.referencia)}'" style="cursor:pointer">
+                <td><span class="dp-ref">${a.referencia}</span></td>
+                <td>${a.nombre}</td>
+                <td style="color:var(--gray-400);font-size:12px">${a.familia || '—'}</td>
+                <td style="text-align:right"><span class="badge badge-red">${a.stock}</span></td>
+                <td style="text-align:right;color:var(--gray-400)">${a.stockMinimo}</td>
+                <td style="text-align:right;font-weight:700;color:var(--red)">−${a.deficit}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch {
+    el.innerHTML = '<p style="color:var(--gray-400);font-size:13px;padding:20px">Error al cargar alertas de stock</p>';
+  }
 }
 
 const fmt      = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);

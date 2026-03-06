@@ -87,3 +87,110 @@ if (form) {
 }
 
 if (typeof window !== 'undefined') { window.Auth = Auth; window.API_URL = API_URL; }
+
+// ── Modal cambio de contraseña ────────────────────────────────
+Auth.openChangePwdModal = () => {
+  // Eliminar modal previo si existe
+  const prev = document.getElementById('changePwdModal');
+  if (prev) prev.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'changePwdModal';
+  modal.className = 'cpwd-overlay';
+  modal.innerHTML = `
+    <div class="cpwd-modal" role="dialog" aria-modal="true" aria-labelledby="cpwdTitle">
+      <div class="cpwd-header">
+        <h2 class="cpwd-title" id="cpwdTitle">Cambiar contraseña</h2>
+        <button class="cpwd-close" id="cpwdClose" aria-label="Cerrar">&times;</button>
+      </div>
+      <form id="cpwdForm" class="cpwd-form" novalidate>
+        <div class="cpwd-field">
+          <label for="cpwdActual">Contraseña actual</label>
+          <input type="password" id="cpwdActual" placeholder="Tu contraseña actual" autocomplete="current-password"/>
+          <span class="cpwd-err" id="cpwdActualErr"></span>
+        </div>
+        <div class="cpwd-field">
+          <label for="cpwdNueva">Nueva contraseña</label>
+          <input type="password" id="cpwdNueva" placeholder="Mínimo 6 caracteres" autocomplete="new-password"/>
+          <span class="cpwd-err" id="cpwdNuevaErr"></span>
+        </div>
+        <div class="cpwd-field">
+          <label for="cpwdConfirm">Confirmar nueva contraseña</label>
+          <input type="password" id="cpwdConfirm" placeholder="Repite la nueva contraseña" autocomplete="new-password"/>
+          <span class="cpwd-err" id="cpwdConfirmErr"></span>
+        </div>
+        <div class="cpwd-feedback" id="cpwdFeedback"></div>
+        <div class="cpwd-actions">
+          <button type="button" class="cpwd-btn-cancel" id="cpwdCancel">Cancelar</button>
+          <button type="submit" class="cpwd-btn-submit" id="cpwdSubmit">Guardar contraseña</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const close = () => modal.remove();
+  document.getElementById('cpwdClose').addEventListener('click', close);
+  document.getElementById('cpwdCancel').addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+  document.getElementById('cpwdForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const actual   = document.getElementById('cpwdActual').value;
+    const nueva    = document.getElementById('cpwdNueva').value;
+    const confirm  = document.getElementById('cpwdConfirm').value;
+    const feedback = document.getElementById('cpwdFeedback');
+    const btn      = document.getElementById('cpwdSubmit');
+
+    // Limpiar errores
+    ['cpwdActualErr', 'cpwdNuevaErr', 'cpwdConfirmErr'].forEach(id => {
+      document.getElementById(id).textContent = '';
+    });
+    feedback.textContent = '';
+    feedback.className = 'cpwd-feedback';
+
+    let valid = true;
+    if (!actual) {
+      document.getElementById('cpwdActualErr').textContent = 'Introduce tu contraseña actual';
+      valid = false;
+    }
+    if (!nueva || nueva.length < 6) {
+      document.getElementById('cpwdNuevaErr').textContent = 'Mínimo 6 caracteres';
+      valid = false;
+    }
+    if (nueva !== confirm) {
+      document.getElementById('cpwdConfirmErr').textContent = 'Las contraseñas no coinciden';
+      valid = false;
+    }
+    if (!valid) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    try {
+      const res = await fetch(`${API_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Auth.getToken()}`,
+        },
+        body: JSON.stringify({ passwordActual: actual, passwordNueva: nueva }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) throw new Error(data.message || 'Error al cambiar la contraseña');
+
+      feedback.textContent = '✔ Contraseña actualizada correctamente';
+      feedback.classList.add('cpwd-feedback--ok');
+      setTimeout(close, 1800);
+
+    } catch (err) {
+      feedback.textContent = err.message;
+      feedback.classList.add('cpwd-feedback--err');
+      btn.disabled = false;
+      btn.textContent = 'Guardar contraseña';
+    }
+  });
+};

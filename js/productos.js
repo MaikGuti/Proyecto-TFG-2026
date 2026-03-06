@@ -122,7 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="prod-metas">
           <div class="prod-meta"><p class="prod-meta-label">Stock</p><div>${stockBadge}</div></div>
-          <div class="prod-meta"><p class="prod-meta-label">Ubicación</p><p class="prod-meta-val">${p.ubicacion || '—'}</p></div>
+          <div class="prod-meta"><p class="prod-meta-label">Familia</p><p class="prod-meta-val">${p.familia || '—'}</p></div>
+          <div class="prod-meta"><p class="prod-meta-label">Unidad</p><p class="prod-meta-val">${p.unidad || '—'}</p></div>
           <div class="prod-meta"><p class="prod-meta-label">PVP</p><p class="prod-meta-val">${p.pvp ? p.pvp.toFixed(2) + ' €' : '—'}</p></div>
         </div>
         <div class="prod-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg></div>

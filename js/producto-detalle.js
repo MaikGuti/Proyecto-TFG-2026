@@ -54,19 +54,19 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="stat-box-line"></div>
           <p class="stat-box-label">Stock disponible</p>
           <p class="stat-box-val">${p.stock}</p>
-          <p class="stat-box-sub">unidades</p>
+          <p class="stat-box-sub">${p.unidad || 'ud'}</p>
         </div>
         <div class="stat-box">
           <div class="stat-box-line"></div>
           <p class="stat-box-label">Precio PVP</p>
           <p class="stat-box-val">${p.pvp ? p.pvp.toFixed(2) : '—'}</p>
-          <p class="stat-box-sub">€ por unidad</p>
+          <p class="stat-box-sub">€ por ${p.unidad || 'ud'}</p>
         </div>
         <div class="stat-box">
           <div class="stat-box-line"></div>
-          <p class="stat-box-label">Ubicación</p>
-          <p class="stat-box-val" style="font-size:26px">${p.ubicacion || '—'}</p>
-          <p class="stat-box-sub">en almacén</p>
+          <p class="stat-box-label">Familia</p>
+          <p class="stat-box-val" style="font-size:20px">${p.familia || '—'}</p>
+          <p class="stat-box-sub">categoría</p>
         </div>
       </div>
 
@@ -86,16 +86,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <tr>
                       <th>Referencia</th>
                       <th>Componente</th>
-                      <th>Cantidad</th>
+                      <th>Versión</th>
+                      <th style="text-align:right">Cantidad</th>
+                      <th style="text-align:right">Stock disp.</th>
                     </tr>
                   </thead>
                   <tbody>
-                    ${despiece.map(c => `
+                    ${despiece.map(c => {
+                      const stockOk = c.stockDisponible !== null && c.stockDisponible >= c.cantidad;
+                      const stockBadge = c.stockDisponible === null
+                        ? `<span style="color:var(--gray-400)">—</span>`
+                        : stockOk
+                          ? `<span class="badge badge-green">${c.stockDisponible}</span>`
+                          : `<span class="badge badge-red">${c.stockDisponible}</span>`;
+                      return `
                       <tr>
                         <td><span class="dp-ref">${c.referencia}</span></td>
                         <td>${c.componente}</td>
-                        <td><strong>${c.cantidad}</strong> ud</td>
-                      </tr>`).join('')}
+                        <td style="color:var(--gray-400);font-size:12px">${c.version || '—'}</td>
+                        <td style="text-align:right"><strong>${c.cantidad}</strong> ${c.unidad || 'ud'}</td>
+                        <td style="text-align:right">${stockBadge}</td>
+                      </tr>`;
+                    }).join('')}
                   </tbody>
                 </table>
               </div>
@@ -120,9 +132,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
             <div class="card-body">
               <div class="info-row"><span class="info-row-label">Referencia</span><span class="info-row-val" style="color:var(--red);font-family:var(--font-display);letter-spacing:0.06em">${p.referencia}</span></div>
-              <div class="info-row"><span class="info-row-label">Unidad de venta</span><span class="info-row-val">${p.unidad || 'ud'}</span></div>
-              <div class="info-row"><span class="info-row-label">Stock</span><span class="info-row-val">${p.stock} ${p.unidad || 'ud'}</span></div>
-              <div class="info-row"><span class="info-row-label">Ubicación almacén</span><span class="info-row-val">${p.ubicacion || '—'}</span></div>
+              <div class="info-row"><span class="info-row-label">Familia</span><span class="info-row-val">${p.familia || '—'}</span></div>
+              <div class="info-row"><span class="info-row-label">Unidad de venta</span><span class="info-row-val">${p.unidad || '—'}</span></div>
+              <div class="info-row"><span class="info-row-label">Stock disponible</span><span class="info-row-val">${p.stock} ${p.unidad || 'ud'}</span></div>
+              <div class="info-row"><span class="info-row-label">Stock mínimo</span><span class="info-row-val">${p.stockMinimo != null ? p.stockMinimo : '—'}</span></div>
+              <div class="info-row"><span class="info-row-label">Pend. recibir</span><span class="info-row-val">${p.pendienteRecibir}</span></div>
+              <div class="info-row"><span class="info-row-label">Reservado</span><span class="info-row-val">${p.reservada}</span></div>
               <div class="info-row"><span class="info-row-label">PVP</span><span class="info-row-val" style="font-family:var(--font-display);font-size:20px;letter-spacing:0.04em">${p.pvp ? p.pvp.toFixed(2) + ' €' : '—'}</span></div>
             </div>
           </div>

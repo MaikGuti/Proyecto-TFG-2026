@@ -56,6 +56,12 @@ function initSidebar(activePage) {
           <p class="user-name">${user.nombre}</p>
           <p class="user-role">${rolLabel}</p>
         </div>
+        <button class="btn-change-pwd" id="changePwdBtn" title="Cambiar contraseña">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </button>
         <button class="btn-logout" id="logoutBtn" title="Cerrar sesión">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -66,6 +72,7 @@ function initSidebar(activePage) {
   `;
 
   document.getElementById('logoutBtn').addEventListener('click', () => Auth.logout());
+  document.getElementById('changePwdBtn').addEventListener('click', () => Auth.openChangePwdModal());
 }
 
 function setTopbarDate() {

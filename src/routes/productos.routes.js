@@ -9,6 +9,10 @@ const { authenticate } = require('../middlewares/auth.middleware');
 // Todas las rutas de productos requieren autenticación
 router.use(authenticate);
 
+// GET /api/productos/alertas-stock
+// Artículos con stock por debajo del mínimo (solo admin)
+router.get('/alertas-stock', productosController.alertasStock);
+
 // GET /api/productos/buscar?q=led-50w
 // Búsqueda por referencia o nombre parcial
 router.get('/buscar', [

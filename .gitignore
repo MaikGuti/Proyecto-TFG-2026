@@ -3,3 +3,8 @@ node_modules/
 logs/
 *.log
 .DS_Store
+
+# Base de datos local de usuarios (contiene contraseñas hasheadas)
+data/usuarios.db
+data/usuarios.db-shm
+data/usuarios.db-wal

@@ -1388,3 +1388,126 @@ svg { display: block; flex-shrink: 0; }
   .search-row { flex-direction: column; }
   .kpi-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Botón cambiar contraseña (sidebar) ────────────────────── */
+.btn-change-pwd {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--gray-400);
+  padding: 6px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .15s, background .15s;
+  flex-shrink: 0;
+}
+.btn-change-pwd svg { width: 17px; height: 17px; }
+.btn-change-pwd:hover { color: var(--white); background: var(--carbon-4); }
+
+/* ── Modal cambio de contraseña ─────────────────────────────── */
+.cpwd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+.cpwd-modal {
+  background: var(--carbon-2);
+  border: 1px solid var(--carbon-line);
+  border-radius: var(--r-lg);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.cpwd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+.cpwd-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: .04em;
+  color: var(--white);
+  margin: 0;
+}
+.cpwd-close {
+  background: none;
+  border: none;
+  color: var(--gray-400);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  transition: color .15s, background .15s;
+}
+.cpwd-close:hover { color: var(--white); background: var(--carbon-4); }
+
+.cpwd-form { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.cpwd-field { display: flex; flex-direction: column; gap: 6px; }
+.cpwd-field label { font-size: .8rem; font-weight: 500; color: var(--gray-400); text-transform: uppercase; letter-spacing: .05em; }
+.cpwd-field input {
+  background: var(--carbon-3);
+  border: 1px solid var(--carbon-4);
+  border-radius: var(--r-md);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: .95rem;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+.cpwd-field input:focus { border-color: var(--red); }
+.cpwd-field input::placeholder { color: var(--gray-600); }
+
+.cpwd-err { font-size: .78rem; color: var(--red); min-height: 14px; }
+
+.cpwd-feedback {
+  font-size: .875rem;
+  text-align: center;
+  min-height: 20px;
+  border-radius: var(--r-sm);
+  padding: 0;
+}
+.cpwd-feedback--ok  { color: var(--green); }
+.cpwd-feedback--err { color: var(--red); }
+
+.cpwd-actions { display: flex; gap: 10px; margin-top: 4px; }
+.cpwd-btn-cancel {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--carbon-4);
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--gray-400);
+  font-family: var(--font-body);
+  font-size: .9rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.cpwd-btn-cancel:hover { background: var(--carbon-4); color: var(--white); }
+.cpwd-btn-submit {
+  flex: 2;
+  padding: 10px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--red);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
+}
+.cpwd-btn-submit:hover:not(:disabled) { background: var(--red-hover); box-shadow: var(--shadow-red); }
+.cpwd-btn-submit:disabled { opacity: .6; cursor: not-allowed; }
