@@ -1,6 +1,11 @@
 // src/services/productos.service.js
 
-const { getPool, sql } = require('../config/database');
+const { getPool, isMockMode, sql } = require('../config/database');
+const {
+  PRODUCTOS_MOCK,
+  ALERTAS_STOCK_MOCK,
+  DESPIECE_MOCK,
+} = require('../config/mock-data');
 
 // Subconsulta de stock reutilizable (empresa 1, almacén 1)
 const SUBQUERY_STOCK = `
@@ -30,7 +35,6 @@ const SUBQUERY_PVP = `
   GROUP BY ta.ID_ARTICULO
 `;
 
-// Campos SELECT comunes a buscar y getByReferencia
 const SELECT_CAMPOS = `
   a.CODIGO_INTERNO                                                          AS referencia,
   a.DESC_ARTICULO                                                           AS nombre,
@@ -46,7 +50,6 @@ const SELECT_CAMPOS = `
   COALESCE(stk.STOCK_ART_ALMACEN + stk.CANT_PDTE_RECIBIR - stk.CANT_RESERVADA, 0) AS stockDisponible
 `;
 
-// JOINs comunes
 const JOINS = `
   INNER JOIN ALM_FAMILIAS_ARTICULOS     AS f   ON f.ID_FAMILIA = a.ID_FAMILIA
   LEFT  JOIN CONFIG_AUX_UNIDADES_MEDIDA AS u   ON u.ID_MEDIDA  = a.UNIDAD_MEDIDA
@@ -54,11 +57,13 @@ const JOINS = `
   LEFT  JOIN (${SUBQUERY_PVP})          AS pvp ON pvp.ID_ARTICULO = a.ID_ARTICULO
 `;
 
-/**
- * Busca productos por referencia o nombre parcial (máx. 50 resultados).
- * Devuelve todos los artículos que coincidan, independientemente del stock.
- */
 const buscar = async (termino) => {
+  if (isMockMode()) {
+    const t = termino.toLowerCase();
+    return PRODUCTOS_MOCK.filter(p =>
+      p.referencia.toLowerCase().includes(t) || p.nombre.toLowerCase().includes(t)
+    );
+  }
   const pool = getPool();
   const result = await pool.request()
     .input('termino', sql.VarChar(200), `%${termino}%`)
@@ -74,10 +79,14 @@ const buscar = async (termino) => {
   return result.recordset;
 };
 
-/**
- * Sugerencias rápidas para autocompletado (solo referencia y nombre, máx. 10).
- */
 const autocompletar = async (termino) => {
+  if (isMockMode()) {
+    const t = termino.toLowerCase();
+    return PRODUCTOS_MOCK
+      .filter(p => p.referencia.toLowerCase().includes(t) || p.nombre.toLowerCase().includes(t))
+      .slice(0, 10)
+      .map(p => ({ referencia: p.referencia, nombre: p.nombre }));
+  }
   const pool = getPool();
   const result = await pool.request()
     .input('termino', sql.VarChar(200), `%${termino}%`)
@@ -93,10 +102,10 @@ const autocompletar = async (termino) => {
   return result.recordset;
 };
 
-/**
- * Detalle completo de un producto por referencia exacta.
- */
 const getByReferencia = async (referencia) => {
+  if (isMockMode()) {
+    return PRODUCTOS_MOCK.find(p => p.referencia === referencia) || PRODUCTOS_MOCK[0];
+  }
   const pool = getPool();
   const result = await pool.request()
     .input('referencia', sql.VarChar(100), referencia)
@@ -111,12 +120,8 @@ const getByReferencia = async (referencia) => {
   return result.recordset[0] || null;
 };
 
-/**
- * Artículos con stock por debajo del mínimo (alertas).
- * Ordenados por déficit descendente (los más críticos primero).
- * Máx. 50 resultados.
- */
 const getAlertasStock = async () => {
+  if (isMockMode()) return ALERTAS_STOCK_MOCK;
   const pool = getPool();
   const result = await pool.request().query(`
     SELECT TOP 50
@@ -140,11 +145,8 @@ const getAlertasStock = async () => {
   return result.recordset;
 };
 
-/**
- * Componentes del despiece de un producto.
- * Componentes del despiece de un producto por su CODIGO_INTERNO.
- */
 const getDespiece = async (referencia) => {
+  if (isMockMode()) return DESPIECE_MOCK;
   const pool = getPool();
   const result = await pool.request()
     .input('codigo', sql.VarChar(100), referencia)

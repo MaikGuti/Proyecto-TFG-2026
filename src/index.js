@@ -11,7 +11,7 @@ const cors    = require('cors');
 const morgan  = require('morgan');
 
 const logger = require('./config/logger');
-const { connectERP, closeConnection } = require('./config/database');
+const { connectERP, closeConnection, enableMockMode } = require('./config/database');
 const { initDB: initUsuariosDB } = require('./config/database-usuarios');
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
 
@@ -90,7 +90,8 @@ const start = async () => {
     if (process.env.DB_SERVER && process.env.DB_USER) {
       await connectERP();
     } else {
-      logger.warn('⚠️  Sin credenciales de BD. Arrancando en modo MOCK (solo para desarrollo)');
+      logger.warn('⚠️  Sin credenciales de BD. Arrancando en modo MOCK (datos de ejemplo para diseño)');
+      enableMockMode();
     }
 
     app.listen(PORT, () => {

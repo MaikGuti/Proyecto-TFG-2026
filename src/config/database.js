@@ -4,7 +4,6 @@
 
 const sql = require('mssql');
 
-// Configuración de la conexión al ERP
 const erpConfig = {
   server: process.env.DB_SERVER,
   port: parseInt(process.env.DB_PORT) || 1433,
@@ -25,13 +24,9 @@ const erpConfig = {
   },
 };
 
-// Pool de conexiones (singleton)
 let erpPool = null;
+let mockMode = false;
 
-/**
- * Inicializa la conexión al ERP.
- * Se llama una sola vez al arrancar el servidor.
- */
 const connectERP = async () => {
   try {
     erpPool = await sql.connect(erpConfig);
@@ -45,16 +40,6 @@ const connectERP = async () => {
   }
 };
 
-/**
- * Devuelve el pool activo.
- * Úsalo en los servicios para ejecutar queries.
- * 
- * Ejemplo de uso:
- *   const pool = getPool();
- *   const result = await pool.request()
- *     .input('referencia', sql.VarChar, ref)
- *     .query('SELECT * FROM Productos WHERE Referencia = @referencia');
- */
 const getPool = () => {
   if (!erpPool) {
     throw new Error('La conexión a la base de datos no está inicializada');
@@ -62,10 +47,6 @@ const getPool = () => {
   return erpPool;
 };
 
-/**
- * Cierra la conexión limpiamente.
- * Se llama al apagar el servidor.
- */
 const closeConnection = async () => {
   if (erpPool) {
     await erpPool.close();
@@ -73,9 +54,20 @@ const closeConnection = async () => {
   }
 };
 
-// Manejo de errores del pool
+/**
+ * Activa el modo MOCK (sin BD real).
+ * Lo llama src/index.js cuando no hay credenciales configuradas.
+ */
+const enableMockMode = () => { mockMode = true; };
+
+/**
+ * Devuelve true si el servidor está corriendo sin conexión al ERP.
+ * Los servicios lo usan para devolver datos de ejemplo.
+ */
+const isMockMode = () => mockMode;
+
 sql.on('error', (err) => {
   console.error('❌ Error en el pool de SQL Server:', err);
 });
 
-module.exports = { connectERP, getPool, closeConnection, sql };
+module.exports = { connectERP, getPool, closeConnection, enableMockMode, isMockMode, sql };

@@ -1,46 +1,35 @@
 // src/services/facturacion.service.js
 
-const { getPool, sql } = require('../config/database');
+const { getPool, isMockMode, sql } = require('../config/database');
+const { DASHBOARD_MOCK, EVOLUCION_MOCK, COMPARATIVA_MOCK } = require('../config/mock-data');
 
 const NOMBRES_MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 const getPeriodoFechas = (periodo) => {
   const hoy = new Date();
   const anio = hoy.getFullYear();
-  const mes = hoy.getMonth(); // 0-based
+  const mes = hoy.getMonth();
 
   switch (periodo) {
     case 'mes':
-      return {
-        desde: new Date(anio, mes, 1),
-        hasta: new Date(anio, mes + 1, 0),
-      };
+      return { desde: new Date(anio, mes, 1), hasta: new Date(anio, mes + 1, 0) };
     case 'trimestre': {
       const trim = Math.floor(mes / 3);
-      return {
-        desde: new Date(anio, trim * 3, 1),
-        hasta: new Date(anio, trim * 3 + 3, 0),
-      };
+      return { desde: new Date(anio, trim * 3, 1), hasta: new Date(anio, trim * 3 + 3, 0) };
     }
     case 'anio':
-      return {
-        desde: new Date(anio, 0, 1),
-        hasta: new Date(anio, 11, 31),
-      };
+      return { desde: new Date(anio, 0, 1), hasta: new Date(anio, 11, 31) };
     default:
       return getPeriodoFechas('mes');
   }
 };
 
-/**
- * Dashboard principal de facturación para un periodo.
- * Tabla: sales_invoice (company_id=1, cancel_date IS NULL)
- */
 const getDashboard = async (periodo) => {
+  if (isMockMode()) return DASHBOARD_MOCK[periodo] || DASHBOARD_MOCK.mes;
+
   const { desde, hasta } = getPeriodoFechas(periodo);
   const pool = getPool();
 
-  // Formatear fechas como strings YYYY-MM-DD para evitar desfases de zona horaria UTC
   const desdeStr = `${desde.getFullYear()}-${String(desde.getMonth() + 1).padStart(2, '0')}-${String(desde.getDate()).padStart(2, '0')}`;
   const hastaStr = `${hasta.getFullYear()}-${String(hasta.getMonth() + 1).padStart(2, '0')}-${String(hasta.getDate()).padStart(2, '0')}`;
 
@@ -70,13 +59,10 @@ const getDashboard = async (periodo) => {
   };
 };
 
-/**
- * Evolución mensual de un año completo (12 meses).
- * Meses sin actividad se rellenan con ceros.
- */
 const getEvolucionMensual = async (anio) => {
-  const pool = getPool();
+  if (isMockMode()) return EVOLUCION_MOCK;
 
+  const pool = getPool();
   const result = await pool.request()
     .input('anio', sql.Int, anio)
     .query(`
@@ -92,7 +78,6 @@ const getEvolucionMensual = async (anio) => {
       ORDER BY mes
     `);
 
-  // Rellenar los 12 meses aunque alguno no tenga datos
   const porMes = {};
   result.recordset.forEach(r => { porMes[r.mes] = r; });
 
@@ -107,33 +92,26 @@ const getEvolucionMensual = async (anio) => {
   });
 };
 
-/**
- * Comparativa mes actual vs mes anterior, y año actual vs año anterior.
- * Una sola query con expresiones CASE para ambos periodos.
- */
 const getComparativa = async () => {
-  const pool = getPool();
+  if (isMockMode()) return COMPARATIVA_MOCK;
 
+  const pool = getPool();
   const result = await pool.request().query(`
     SELECT
-      -- Mes actual
       COALESCE(SUM(CASE WHEN issue_date >= DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE()),   0)
                         AND  issue_date <  DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE())+1, 0)
                         THEN total_amount END), 0) AS totalMesActual,
       COUNT(CASE WHEN issue_date >= DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE()),   0)
                  AND  issue_date <  DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE())+1, 0)
                  THEN 1 END)                        AS facturasMesActual,
-      -- Mes anterior
       COALESCE(SUM(CASE WHEN issue_date >= DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE())-1, 0)
                         AND  issue_date <  DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE()),   0)
                         THEN total_amount END), 0) AS totalMesAnterior,
       COUNT(CASE WHEN issue_date >= DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE())-1, 0)
                  AND  issue_date <  DATEADD(MONTH, DATEDIFF(MONTH,0,GETDATE()),   0)
                  THEN 1 END)                        AS facturasMesAnterior,
-      -- Año actual
       COALESCE(SUM(CASE WHEN YEAR(issue_date) = YEAR(GETDATE()) THEN total_amount END), 0) AS totalAnioActual,
       COUNT(CASE WHEN YEAR(issue_date) = YEAR(GETDATE()) THEN 1 END)                        AS facturasAnioActual,
-      -- Año anterior
       COALESCE(SUM(CASE WHEN YEAR(issue_date) = YEAR(GETDATE())-1 THEN total_amount END), 0) AS totalAnioAnterior,
       COUNT(CASE WHEN YEAR(issue_date) = YEAR(GETDATE())-1 THEN 1 END)                        AS facturasAnioAnterior
     FROM sales_invoice
@@ -142,7 +120,6 @@ const getComparativa = async () => {
   `);
 
   const r = result.recordset[0];
-
   const variacionMes  = r.totalMesAnterior > 0
     ? parseFloat(((r.totalMesActual - r.totalMesAnterior) / r.totalMesAnterior * 100).toFixed(1))
     : null;
