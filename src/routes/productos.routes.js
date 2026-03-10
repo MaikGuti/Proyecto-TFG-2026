@@ -13,6 +13,10 @@ router.use(authenticate);
 // Artículos con stock por debajo del mínimo (solo admin)
 router.get('/alertas-stock', productosController.alertasStock);
 
+// GET /api/productos/ubicaciones-despieces
+// Ubicaciones de almacén de todos los artículos con stock físico > 0
+router.get('/ubicaciones-despieces', productosController.ubicacionesDespieces);
+
 // GET /api/productos/buscar?q=led-50w
 // Búsqueda por referencia o nombre parcial
 router.get('/buscar', [
@@ -50,5 +54,14 @@ router.get('/:referencia/despiece', [
     .trim()
     .escape(),
 ], productosController.despiece);
+
+// GET /api/productos/:referencia/ubicaciones
+// Ubicaciones de almacén para una referencia concreta
+router.get('/:referencia/ubicaciones', [
+  param('referencia')
+    .notEmpty()
+    .trim()
+    .escape(),
+], productosController.ubicacionesByRef);
 
 module.exports = router;

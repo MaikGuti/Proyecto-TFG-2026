@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadKPIs('mes');
   await loadChart();
   await loadComp();
-  await loadAlertasStock();
 });
 
 async function loadKPIs(periodo) {
@@ -34,19 +33,19 @@ async function loadKPIs(periodo) {
 
     grid.innerHTML = `
       <div class="kpi kpi-accent fade-up">
-        <div class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <div class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
         <p class="kpi-label">Total facturado</p>
         <p class="kpi-val">${fmt(d.totalFacturado)}</p>
         <p class="kpi-sub">${d.desde} – ${d.hasta}</p>
       </div>
       <div class="kpi fade-up">
-        <div class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+        <div class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div>
         <p class="kpi-label">Facturas emitidas</p>
         <p class="kpi-val">${d.numFacturas}</p>
         <p class="kpi-sub">documentos</p>
       </div>
       <div class="kpi fade-up">
-        <div class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+        <div class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
         <p class="kpi-label">Ticket medio</p>
         <p class="kpi-val">${fmt(d.ticketMedio)}</p>
         <p class="kpi-sub">por factura</p>
@@ -166,66 +165,16 @@ function compBlock(titulo, d) {
         <div class="comp-bar-fill" style="width:0%" data-w="${w}%"></div>
       </div>
       <div class="comp-change">
-        <span class="comp-pct ${up ? 'up' : 'down'}">${up ? '↑' : '↓'} ${pct}%</span>
+        <span class="comp-pct ${up ? 'up' : 'down'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+            ${up ? '<polyline points="18 15 12 9 6 15"/>' : '<polyline points="6 9 12 15 18 9"/>'}
+          </svg>
+          ${pct}%
+        </span>
       </div>
     </div>`;
 }
 
-async function loadAlertasStock() {
-  const el    = document.getElementById('alertasContent');
-  const badge = document.getElementById('alertasBadge');
-  try {
-    const res  = await fetch(`${API_URL}/productos/alertas-stock`, {
-      headers: { Authorization: `Bearer ${Auth.getToken()}` },
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error();
-
-    const items = data.data;
-
-    badge.textContent = `${items.length} artículo${items.length !== 1 ? 's' : ''}`;
-    badge.style.display = 'inline-flex';
-
-    if (!items.length) {
-      el.innerHTML = `
-        <div class="empty" style="padding:28px">
-          <div class="empty-ico">✅</div>
-          <h3>SIN ALERTAS</h3>
-          <p>Todos los artículos están por encima del stock mínimo</p>
-        </div>`;
-      return;
-    }
-
-    el.innerHTML = `
-      <div style="overflow-x:auto">
-        <table class="despiece-table">
-          <thead>
-            <tr>
-              <th>Referencia</th>
-              <th>Descripción</th>
-              <th>Familia</th>
-              <th style="text-align:right">Stock actual</th>
-              <th style="text-align:right">Mínimo</th>
-              <th style="text-align:right">Déficit</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map(a => `
-              <tr onclick="window.location.href='/pages/producto.html?ref=${encodeURIComponent(a.referencia)}'" style="cursor:pointer">
-                <td><span class="dp-ref">${a.referencia}</span></td>
-                <td>${a.nombre}</td>
-                <td style="color:var(--gray-400);font-size:12px">${a.familia || '—'}</td>
-                <td style="text-align:right"><span class="badge badge-red">${a.stock}</span></td>
-                <td style="text-align:right;color:var(--gray-400)">${a.stockMinimo}</td>
-                <td style="text-align:right;font-weight:700;color:var(--red)">−${a.deficit}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`;
-  } catch {
-    el.innerHTML = '<p style="color:var(--gray-400);font-size:13px;padding:20px">Error al cargar alertas de stock</p>';
-  }
-}
 
 const fmt      = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
 const fmtShort = n => n >= 1000 ? `${(n/1000).toFixed(0)}k` : n;

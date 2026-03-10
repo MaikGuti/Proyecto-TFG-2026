@@ -107,7 +107,6 @@ const ALERTAS_STOCK_MOCK = [
 
 const DESPIECE_MOCK = [
   {
-    version: 'v1.0',
     referencia: 'CHI-SMD-5630',
     componente: 'Chip LED SMD 5630',
     cantidad: 60,
@@ -115,7 +114,6 @@ const DESPIECE_MOCK = [
     stockDisponible: 2400,
   },
   {
-    version: 'v1.0',
     referencia: 'DRV-INT-50W',
     componente: 'Driver interno 50W',
     cantidad: 1,
@@ -123,7 +121,6 @@ const DESPIECE_MOCK = [
     stockDisponible: 45,
   },
   {
-    version: 'v1.0',
     referencia: 'CUB-ALU-195',
     componente: 'Carcasa aluminio 195mm',
     cantidad: 1,
@@ -131,7 +128,6 @@ const DESPIECE_MOCK = [
     stockDisponible: 120,
   },
   {
-    version: 'v1.0',
     referencia: 'DIF-PC-OPL',
     componente: 'Difusor policarbonato opal',
     cantidad: 1,
@@ -197,10 +193,22 @@ const COMPARATIVA_MOCK = {
   },
 };
 
+const UBICACIONES_DESPIECES_MOCK = [
+  { referencia: 'CHI-SMD-5630', nombre: 'Chip LED SMD 5630',        almacen: 'Almacén Principal', subalmacen: 'Componentes',  ubicacion: 'A-01-01', stock: 2400 },
+  { referencia: 'CHI-SMD-5630', nombre: 'Chip LED SMD 5630',        almacen: 'Almacén Principal', subalmacen: 'Componentes',  ubicacion: 'A-01-02', stock: 800  },
+  { referencia: 'DRV-INT-50W',  nombre: 'Driver interno 50W',       almacen: 'Almacén Principal', subalmacen: 'Electrónica',  ubicacion: 'B-02-03', stock: 45   },
+  { referencia: 'CUB-ALU-195',  nombre: 'Carcasa aluminio 195mm',   almacen: 'Almacén Principal', subalmacen: 'Mecánica',     ubicacion: 'C-03-01', stock: 120  },
+  { referencia: 'CUB-ALU-195',  nombre: 'Carcasa aluminio 195mm',   almacen: 'Almacén Secundario', subalmacen: 'Excedentes',  ubicacion: 'D-01-01', stock: 30   },
+  { referencia: 'DIF-PC-OPL',   nombre: 'Difusor policarbonato opal', almacen: 'Almacén Principal', subalmacen: 'Óptica',    ubicacion: 'C-04-02', stock: 95   },
+  { referencia: 'DRV-150W-24V', nombre: 'Driver LED 150W 24V',      almacen: 'Almacén Principal', subalmacen: 'Electrónica',  ubicacion: 'B-02-01', stock: 2    },
+  { referencia: 'CON-DALI-8CH', nombre: 'Controlador DALI 8 canales', almacen: 'Almacén Principal', subalmacen: 'Control',   ubicacion: 'B-05-01', stock: 3    },
+];
+
 module.exports = {
   PRODUCTOS_MOCK,
   ALERTAS_STOCK_MOCK,
   DESPIECE_MOCK,
+  UBICACIONES_DESPIECES_MOCK,
   DASHBOARD_MOCK,
   EVOLUCION_MOCK,
   COMPARATIVA_MOCK,

@@ -5,6 +5,7 @@ const {
   PRODUCTOS_MOCK,
   ALERTAS_STOCK_MOCK,
   DESPIECE_MOCK,
+  UBICACIONES_DESPIECES_MOCK,
 } = require('../config/mock-data');
 
 // Subconsulta de stock reutilizable (empresa 1, almacén 1)
@@ -152,7 +153,6 @@ const getDespiece = async (referencia) => {
     .input('codigo', sql.VarChar(100), referencia)
     .query(`
       SELECT
-        PROD_VERSIONES.DESC_VERSION                     AS version,
         componentes.CODIGO_INTERNO                      AS referencia,
         componentes.DESC_ARTICULO                       AS componente,
         PROD_COMPOSICIONES.CANTIDAD                     AS cantidad,
@@ -161,8 +161,6 @@ const getDespiece = async (referencia) => {
       FROM PROD_ARTICULOS
       JOIN PROD_COMPOSICIONES
           ON PROD_COMPOSICIONES.VER_ARTICULO_PADRE = PROD_ARTICULOS.ID_VERSION_ARTICULO
-      JOIN PROD_VERSIONES
-          ON PROD_VERSIONES.ID_VERSION = PROD_ARTICULOS.ID_VERSION
       JOIN ALM_MAESTRO_ARTICULOS
           ON ALM_MAESTRO_ARTICULOS.ID_ARTICULO = PROD_ARTICULOS.ID_ARTICULO
       JOIN PROD_ARTICULOS AS version_componentes
@@ -186,4 +184,63 @@ const getDespiece = async (referencia) => {
   return result.recordset;
 };
 
-module.exports = { buscar, autocompletar, getByReferencia, getAlertasStock, getDespiece };
+const getUbicacionesDespieces = async () => {
+  if (isMockMode()) return UBICACIONES_DESPIECES_MOCK;
+  const pool = getPool();
+  const result = await pool.request().query(`
+    SELECT
+      ma.CODIGO_INTERNO                     AS referencia,
+      ma.DESC_ARTICULO                      AS nombre,
+      al.DESC_ALMACEN                       AS almacen,
+      sal.DESC_SUBALMACEN                   AS subalmacen,
+      ub.COD_UBICACION                      AS ubicacion,
+      aa.STOCK_FISICO                       AS stock
+    FROM ALM_ARTICULOS_ALMACEN aa
+    JOIN ALM_MAESTRO_ARTICULOS ma
+        ON ma.ID_ARTICULO = aa.ID_ARTICULO
+    LEFT JOIN ALM_DEFINICION_ALMACENES al
+        ON al.ID_ALMACEN = aa.ID_ALMACEN
+    LEFT JOIN ALM_DEFINICION_SUBALMACENES sal
+        ON sal.ID_SUBALMACEN = aa.ID_SUBALMACEN
+    LEFT JOIN ALM_DEFINICION_UBICACIONES ub
+        ON ub.ID_UBICACION = aa.ID_UBICACION
+    WHERE aa.STOCK_FISICO > 0
+    ORDER BY
+      ma.CODIGO_INTERNO,
+      al.DESC_ALMACEN,
+      sal.DESC_SUBALMACEN,
+      ub.COD_UBICACION
+  `);
+  return result.recordset;
+};
+
+const getUbicacionesByRef = async (referencia) => {
+  if (isMockMode()) {
+    return UBICACIONES_DESPIECES_MOCK.filter(u => u.referencia === referencia);
+  }
+  const pool = getPool();
+  const result = await pool.request()
+    .input('referencia', sql.VarChar(100), referencia)
+    .query(`
+      SELECT
+        al.DESC_ALMACEN      AS almacen,
+        sal.DESC_SUBALMACEN  AS subalmacen,
+        ub.COD_UBICACION     AS ubicacion,
+        aa.STOCK_FISICO      AS stock
+      FROM ALM_ARTICULOS_ALMACEN aa
+      JOIN ALM_MAESTRO_ARTICULOS ma
+          ON ma.ID_ARTICULO = aa.ID_ARTICULO
+      LEFT JOIN ALM_DEFINICION_ALMACENES al
+          ON al.ID_ALMACEN = aa.ID_ALMACEN
+      LEFT JOIN ALM_DEFINICION_SUBALMACENES sal
+          ON sal.ID_SUBALMACEN = aa.ID_SUBALMACEN
+      LEFT JOIN ALM_DEFINICION_UBICACIONES ub
+          ON ub.ID_UBICACION = aa.ID_UBICACION
+      WHERE aa.STOCK_FISICO > 0
+        AND ma.CODIGO_INTERNO = @referencia
+      ORDER BY al.DESC_ALMACEN, sal.DESC_SUBALMACEN, ub.COD_UBICACION
+    `);
+  return result.recordset;
+};
+
+module.exports = { buscar, autocompletar, getByReferencia, getAlertasStock, getDespiece, getUbicacionesDespieces, getUbicacionesByRef };

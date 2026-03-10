@@ -11,9 +11,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     const token = Auth.getToken();
+    const headers = { Authorization: `Bearer ${token}` };
+
     const [rP, rD] = await Promise.all([
-      fetch(`${API_URL}/productos/${encodeURIComponent(ref)}`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(`${API_URL}/productos/${encodeURIComponent(ref)}/despiece`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${API_URL}/productos/${encodeURIComponent(ref)}`, { headers }),
+      fetch(`${API_URL}/productos/${encodeURIComponent(ref)}/despiece`, { headers }),
     ]);
 
     const dP = await rP.json();
@@ -77,7 +79,22 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="card fade-up">
             <div class="card-head">
               <p class="card-title">Despiece / Componentes</p>
-              <span class="badge badge-gray">${despiece.length} componente${despiece.length !== 1 ? 's' : ''}</span>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="badge badge-gray">${despiece.length} componente${despiece.length !== 1 ? 's' : ''}</span>
+                ${despiece.length > 0 ? `
+                <button class="btn-ver-ub" id="btnTodasUb" onclick="toggleTodasUbicaciones(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Ver todas las ubicaciones
+                </button>` : `
+                <button class="btn-ver-ub"
+                  data-ref="${p.referencia}"
+                  data-loaded="false"
+                  data-open="false"
+                  onclick="toggleUbicacionesProd(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Ver ubicaciones
+                </button>`}
+              </div>
             </div>
             ${despiece.length > 0 ? `
               <div style="overflow-x:auto">
@@ -86,9 +103,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <tr>
                       <th>Referencia</th>
                       <th>Componente</th>
-                      <th>Versión</th>
                       <th style="text-align:right">Cantidad</th>
                       <th style="text-align:right">Stock disp.</th>
+                      <th style="text-align:right">Ubicaciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -99,24 +116,48 @@ document.addEventListener('DOMContentLoaded', async () => {
                         : stockOk
                           ? `<span class="badge badge-green">${c.stockDisponible}</span>`
                           : `<span class="badge badge-red">${c.stockDisponible}</span>`;
+
                       return `
                       <tr>
                         <td><span class="dp-ref">${c.referencia}</span></td>
                         <td>${c.componente}</td>
-                        <td style="color:var(--gray-400);font-size:12px">${c.version || '—'}</td>
                         <td style="text-align:right"><strong>${c.cantidad}</strong> ${c.unidad || 'ud'}</td>
                         <td style="text-align:right">${stockBadge}</td>
+                        <td style="text-align:right">
+                          <button class="btn-ver-ub"
+                            data-ref="${c.referencia}"
+                            data-loaded="false"
+                            data-open="false"
+                            onclick="toggleUbicaciones(this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            Ver ubicaciones
+                          </button>
+                        </td>
+                      </tr>
+                      <tr class="dp-loc-group" id="ub-${c.referencia}" style="display:none">
+                        <td colspan="6" style="padding:0">
+                          <div class="dp-loc-inner" id="ub-content-${c.referencia}">
+                            <div class="dp-loc-loading">Cargando...</div>
+                          </div>
+                        </td>
                       </tr>`;
                     }).join('')}
                   </tbody>
                 </table>
               </div>
             ` : `
-              <div class="card-body">
-                <div class="empty" style="padding:28px">
-                  <div class="empty-ico">🔩</div>
+              <div class="card-body" style="padding:0">
+                <div class="empty" style="padding:24px 28px 20px">
+                  <div class="empty-ico empty-ico-svg">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+                  </div>
                   <h3>SIN DESPIECE</h3>
                   <p>Este producto no tiene componentes registrados</p>
+                </div>
+                <div id="ub-prod-${p.referencia}" style="display:none">
+                  <div class="dp-loc-inner" id="ub-prod-content-${p.referencia}">
+                    <div class="dp-loc-loading">Cargando...</div>
+                  </div>
                 </div>
               </div>
             `}
@@ -150,7 +191,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="card" style="max-width:460px;margin:0 auto">
         <div class="card-body">
           <div class="empty">
-            <div class="empty-ico">⚠️</div>
+            <div class="empty-ico empty-ico-svg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
             <h3>NO ENCONTRADO</h3>
             <p>${err.message}</p>
             <button class="btn-primary" style="margin-top:20px;width:auto;padding:0 24px" onclick="history.back()">VOLVER</button>
@@ -159,3 +202,162 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>`;
   }
 });
+
+// ── Ver/ocultar todas las ubicaciones a la vez ─────────────────
+async function toggleTodasUbicaciones(btnTodas) {
+  const botones = document.querySelectorAll('.btn-ver-ub[data-ref]');
+  const hayAlgunaAbierta = [...botones].some(b => b.dataset.open === 'true');
+
+  // Si hay alguna abierta → cerrar todas; si no → abrir todas
+  const abrir = !hayAlgunaAbierta;
+
+  await Promise.all([...botones].map(btn => {
+    const estaAbierto = btn.dataset.open === 'true';
+    if (abrir && !estaAbierto) return toggleUbicaciones(btn);
+    if (!abrir && estaAbierto)  return toggleUbicaciones(btn);
+  }));
+
+  btnTodas.innerHTML = abrir
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg> Ocultar todas`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Ver todas las ubicaciones`;
+}
+
+// ── Toggle ubicaciones por componente ──────────────────────────
+async function toggleUbicaciones(btn) {
+  const ref     = btn.dataset.ref;
+  const loaded  = btn.dataset.loaded === 'true';
+  const isOpen  = btn.dataset.open   === 'true';
+  const row     = document.getElementById(`ub-${ref}`);
+  const content = document.getElementById(`ub-content-${ref}`);
+
+  // Ocultar si ya está abierto
+  if (isOpen) {
+    row.style.display = 'none';
+    btn.dataset.open  = 'false';
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Ver ubicaciones`;
+    return;
+  }
+
+  // Mostrar fila contenedora
+  row.style.display = '';
+  btn.dataset.open  = 'true';
+  btn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg>
+    Ocultar`;
+
+  // Si ya se cargó, no volver a pedir
+  if (loaded) return;
+
+  btn.dataset.loaded = 'true';
+
+  try {
+    const res  = await fetch(`${API_URL}/productos/${encodeURIComponent(ref)}/ubicaciones`, {
+      headers: { Authorization: `Bearer ${Auth.getToken()}` },
+    });
+    const data = await res.json();
+    const ubicaciones = data.success ? data.data : [];
+
+    if (!ubicaciones.length) {
+      content.innerHTML = `
+        <div class="dp-loc-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Sin ubicaciones con stock registradas
+        </div>`;
+      return;
+    }
+
+    content.innerHTML = `
+      <table class="dp-loc-table">
+        <thead>
+          <tr>
+            <th>Almacén</th>
+            <th>Subalmacén</th>
+            <th>Ubicación</th>
+            <th style="text-align:right">Stock físico</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ubicaciones.map(u => `
+          <tr>
+            <td>${u.almacen || '—'}</td>
+            <td>${u.subalmacen || '—'}</td>
+            <td><span class="dp-loc-tag">${u.ubicacion || '—'}</span></td>
+            <td style="text-align:right"><strong>${u.stock.toLocaleString('es-ES')}</strong> ud</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+  } catch {
+    content.innerHTML = `<div class="dp-loc-empty">Error al cargar ubicaciones</div>`;
+  }
+}
+
+// ── Ubicaciones para producto SIN despiece (div, no table row) ──
+async function toggleUbicacionesProd(btn) {
+  const ref       = btn.dataset.ref;
+  const loaded    = btn.dataset.loaded === 'true';
+  const isOpen    = btn.dataset.open   === 'true';
+  const container = document.getElementById(`ub-prod-${ref}`);
+  const content   = document.getElementById(`ub-prod-content-${ref}`);
+
+  if (isOpen) {
+    container.style.display = 'none';
+    btn.dataset.open = 'false';
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Ver ubicaciones`;
+    return;
+  }
+
+  container.style.display = '';
+  btn.dataset.open = 'true';
+  btn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg>
+    Ocultar`;
+
+  if (loaded) return;
+  btn.dataset.loaded = 'true';
+
+  try {
+    const res  = await fetch(`${API_URL}/productos/${encodeURIComponent(ref)}/ubicaciones`, {
+      headers: { Authorization: `Bearer ${Auth.getToken()}` },
+    });
+    const data = await res.json();
+    const ubicaciones = data.success ? data.data : [];
+
+    if (!ubicaciones.length) {
+      content.innerHTML = `
+        <div class="dp-loc-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Sin ubicaciones con stock registradas
+        </div>`;
+      return;
+    }
+
+    content.innerHTML = `
+      <table class="dp-loc-table">
+        <thead>
+          <tr>
+            <th>Almacén</th>
+            <th>Subalmacén</th>
+            <th>Ubicación</th>
+            <th style="text-align:right">Stock físico</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ubicaciones.map(u => `
+          <tr>
+            <td>${u.almacen || '—'}</td>
+            <td>${u.subalmacen || '—'}</td>
+            <td><span class="dp-loc-tag">${u.ubicacion || '—'}</span></td>
+            <td style="text-align:right"><strong>${u.stock.toLocaleString('es-ES')}</strong> ud</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+  } catch {
+    content.innerHTML = `<div class="dp-loc-empty">Error al cargar ubicaciones</div>`;
+  }
+}

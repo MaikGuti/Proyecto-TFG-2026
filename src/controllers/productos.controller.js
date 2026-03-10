@@ -123,4 +123,35 @@ const alertasStock = async (_req, res, next) => {
   }
 };
 
-module.exports = { buscar, autocompletar, detalle, despiece, alertasStock };
+/**
+ * GET /api/productos/ubicaciones-despieces
+ * Ubicaciones de almacén de todos los artículos con stock físico > 0
+ */
+const ubicacionesDespieces = async (_req, res, next) => {
+  try {
+    const datos = await productosService.getUbicacionesDespieces();
+    res.json({
+      success: true,
+      data: datos,
+      total: datos.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/productos/:referencia/ubicaciones
+ * Ubicaciones de almacén para una referencia concreta (STOCK_FISICO > 0)
+ */
+const ubicacionesByRef = async (req, res, next) => {
+  try {
+    const { referencia } = req.params;
+    const datos = await productosService.getUbicacionesByRef(referencia);
+    res.json({ success: true, data: datos });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { buscar, autocompletar, detalle, despiece, alertasStock, ubicacionesDespieces, ubicacionesByRef };

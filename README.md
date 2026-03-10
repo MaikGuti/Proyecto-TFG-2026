@@ -6,17 +6,53 @@ API REST para consultas rápidas al ERP de TECSOLED.
 
 - Node.js >= 18.0.0
 - npm >= 9.0.0
-- Acceso a SQL Server del ERP (credenciales de solo lectura)
 
-## Instalación
+---
+
+## Modo diseño / maquetación (sin acceso al ERP)
+
+Si no tienes acceso a la red de la empresa, el servidor arranca en **modo MOCK** con datos de ejemplo. Todas las páginas son completamente funcionales.
 
 ```bash
 # 1. Instalar dependencias
 npm install
 
-# 2. Copiar y configurar variables de entorno
+# 2. Usar el entorno mock (sin credenciales de BD)
+cp .env.mock .env
+
+# 3. Arrancar
+npm run dev
+```
+
+Abre el navegador en **http://localhost:3000/login.html**
+
+**Credenciales demo:**
+
+| Usuario | Email | Contraseña | Acceso |
+|---|---|---|---|
+| Administrador | `admin@tecsoled.com` | `demo1234` | Todas las páginas + Dashboard |
+| Operativo | `operativo@tecsoled.com` | `demo1234` | Búsqueda y detalle de productos |
+
+**Páginas disponibles:**
+
+| Página | URL |
+|---|---|
+| Login | `/login.html` |
+| Búsqueda de productos | `/pages/busqueda.html` |
+| Detalle de producto | `/pages/producto.html?ref=LED-50W` |
+| Dashboard facturación | `/pages/dashboard.html` (solo admin) |
+
+---
+
+## Instalación con BD real (producción / red empresa)
+
+```bash
+# 1. Instalar dependencias
+npm install
+
+# 2. Copiar plantilla y rellenar credenciales reales
 cp .env.example .env
-# Editar .env con las credenciales reales
+# Editar .env con IP, usuario y contraseña del SQL Server
 
 # 3. Arrancar en desarrollo
 npm run dev
@@ -51,6 +87,8 @@ npm start
 | GET | `/api/productos/autocompletar?q=led` | Sugerencias autocompletado |
 | GET | `/api/productos/:referencia` | Detalle de producto |
 | GET | `/api/productos/:referencia/despiece` | Componentes del producto |
+| GET | `/api/productos/:referencia/ubicaciones` | Ubicaciones en almacén |
+| GET | `/api/productos/ubicaciones-despieces` | Ubicaciones de todos los artículos |
 
 ### Facturación (solo ROL admin)
 | Método | Ruta | Descripción |
@@ -79,14 +117,6 @@ curl -X POST http://localhost:3000/api/auth/login \
 - ✅ Endpoints definidos y funcionales con datos mock
 - ⏳ Conexión real al ERP (pendiente de credenciales)
 - ⏳ Queries SQL reales (comentadas en los servicios, listas para activar)
-
-## Conectar al ERP (mañana)
-
-1. Rellenar `DB_SERVER`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` en `.env`
-2. En cada archivo de `src/services/`, descomentar el bloque `// TODO: Query real`
-3. Comentar o eliminar el bloque `// MOCK temporal`
-4. Ajustar nombres de tablas y columnas según el schema real del ERP
-5. Reiniciar el servidor con `npm run dev`
 
 ## Estructura del proyecto
 

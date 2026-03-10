@@ -4,6 +4,7 @@
 
 const path    = require('path');
 const fs      = require('fs');
+const bcrypt  = require('bcryptjs');
 const Database = require('better-sqlite3');
 
 const DB_PATH = path.join(__dirname, '../../data/usuarios.db');
@@ -35,6 +36,18 @@ const initDB = () => {
       creado_en    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
     )
   `);
+
+  // Si la tabla está vacía, insertar usuarios demo para desarrollo/diseño
+  const { n } = db.prepare('SELECT COUNT(*) AS n FROM usuarios').get();
+  if (n === 0) {
+    const hash = bcrypt.hashSync('demo1234', 10);
+    const insert = db.prepare(
+      'INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (?, ?, ?, ?)'
+    );
+    insert.run('Administrador Demo', 'admin@tecsoled.com',     hash, 'admin');
+    insert.run('Operativo Demo',     'operativo@tecsoled.com', hash, 'operativo');
+    console.log('👤 Usuarios demo creados (admin@tecsoled.com / operativo@tecsoled.com — contraseña: demo1234)');
+  }
 
   return db;
 };
