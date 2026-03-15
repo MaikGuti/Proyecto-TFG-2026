@@ -1,4 +1,5 @@
 // js/dashboard.js
+// solo accesible para admin — si el rol no es correcto redirige a búsqueda
 let chart = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -16,6 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  // cargo primero los KPIs y después la gráfica y comparativa
+  // no uso Promise.all aquí para que los KPIs aparezcan antes visualmente
   await loadKPIs('mes');
   await loadChart();
   await loadComp();
@@ -57,6 +60,7 @@ async function loadKPIs(periodo) {
 }
 
 async function loadChart() {
+  // Chart viene del CDN de Chart.js — el IDE lo marca como desconocido pero funciona
   const anio = new Date().getFullYear();
   document.getElementById('chartYearBadge').textContent = anio;
 
@@ -149,6 +153,8 @@ async function loadComp() {
   }
 }
 
+// genera el HTML de un bloque de comparativa (mes o año)
+// el ancho de la barra lo calculo como proporción actual/total para visualizar la diferencia
 function compBlock(titulo, d) {
   const up  = d.tendencia === 'subida';
   const pct = Math.abs(d.variacionPorcentaje).toFixed(1);

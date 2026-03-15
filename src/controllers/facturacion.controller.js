@@ -4,9 +4,7 @@ const { validationResult } = require('express-validator');
 const facturacionService = require('../services/facturacion.service');
 const logger = require('../config/logger');
 
-/**
- * GET /api/facturacion/dashboard?periodo=mes|trimestre|anio
- */
+// GET /api/facturacion/dashboard?periodo=mes|trimestre|anio
 const dashboard = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -15,52 +13,36 @@ const dashboard = async (req, res, next) => {
     }
 
     const periodo = req.query.periodo || 'mes';
-    logger.debug(`Dashboard facturación - periodo: ${periodo} - usuario: ${req.user.email}`);
+    logger.debug(`Dashboard facturación — periodo: ${periodo} — usuario: ${req.usuario.email}`);
 
     const datos = await facturacionService.getDashboard(periodo);
+    res.json({ success: true, data: datos });
 
-    res.json({
-      success: true,
-      data: datos,
-    });
-
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * GET /api/facturacion/evolucion?anio=2024
- */
+// GET /api/facturacion/evolucion?anio=2024
 const evolucionMensual = async (req, res, next) => {
   try {
+    // si no viene el año uso el actual
     const anio = parseInt(req.query.anio) || new Date().getFullYear();
     const datos = await facturacionService.getEvolucionMensual(anio);
+    res.json({ success: true, data: datos });
 
-    res.json({
-      success: true,
-      data: datos,
-    });
-
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * GET /api/facturacion/comparativa
- */
-const comparativa = async (req, res, next) => {
+// GET /api/facturacion/comparativa
+const comparativa = async (_req, res, next) => {
   try {
     const datos = await facturacionService.getComparativa();
-
-    res.json({
-      success: true,
-      data: datos,
-    });
-
-  } catch (error) {
-    next(error);
+    res.json({ success: true, data: datos });
+  } catch (err) {
+    next(err);
   }
 };
 

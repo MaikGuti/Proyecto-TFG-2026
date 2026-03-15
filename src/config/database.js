@@ -1,19 +1,18 @@
 // src/config/database.js
-// Configuración del pool de conexiones a SQL Server del ERP
-// Solo lectura - no se realizan operaciones de escritura
+// Conexión al SQL Server del ERP de TECSOLED — solo lectura
 
 const sql = require('mssql');
 
 const erpConfig = {
-  server: process.env.DB_SERVER,
-  port: parseInt(process.env.DB_PORT) || 1433,
+  server:   process.env.DB_SERVER,
+  port:     parseInt(process.env.DB_PORT) || 1433,
   database: process.env.DB_NAME,
-  user: process.env.DB_USER,
+  user:     process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   options: {
-    encrypt: process.env.DB_ENCRYPT === 'true',
+    encrypt:               process.env.DB_ENCRYPT === 'true',
     trustServerCertificate: process.env.DB_TRUST_CERT === 'true',
-    enableArithAbort: true,
+    enableArithAbort:      true,
     connectTimeout: 30000,
     requestTimeout: 15000,
   },
@@ -30,44 +29,33 @@ let mockMode = false;
 const connectERP = async () => {
   try {
     erpPool = await sql.connect(erpConfig);
-    console.log('✅ Conexión a SQL Server ERP establecida correctamente');
-    console.log(`   📦 Base de datos: ${process.env.DB_NAME}`);
-    console.log(`   🖥️  Servidor: ${process.env.DB_SERVER}`);
+    console.log('✅ Conexión a SQL Server ERP establecida');
+    console.log(`   Base de datos: ${process.env.DB_NAME} — Servidor: ${process.env.DB_SERVER}`);
     return erpPool;
   } catch (error) {
-    console.error('❌ Error al conectar con SQL Server ERP:', error.message);
+    console.error('❌ Error al conectar con SQL Server:', error.message);
     throw error;
   }
 };
 
 const getPool = () => {
-  if (!erpPool) {
-    throw new Error('La conexión a la base de datos no está inicializada');
-  }
+  if (!erpPool) throw new Error('La conexión a la base de datos no está inicializada');
   return erpPool;
 };
 
 const closeConnection = async () => {
   if (erpPool) {
     await erpPool.close();
-    console.log('🔌 Conexión a SQL Server cerrada');
+    console.log('Conexión a SQL Server cerrada');
   }
 };
 
-/**
- * Activa el modo MOCK (sin BD real).
- * Lo llama src/index.js cuando no hay credenciales configuradas.
- */
+// activo el modo mock desde index.js cuando no hay credenciales de BD
 const enableMockMode = () => { mockMode = true; };
-
-/**
- * Devuelve true si el servidor está corriendo sin conexión al ERP.
- * Los servicios lo usan para devolver datos de ejemplo.
- */
 const isMockMode = () => mockMode;
 
 sql.on('error', (err) => {
-  console.error('❌ Error en el pool de SQL Server:', err);
+  console.error('Error en el pool de SQL Server:', err);
 });
 
 module.exports = { connectERP, getPool, closeConnection, enableMockMode, isMockMode, sql };

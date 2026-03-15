@@ -3,12 +3,15 @@
 const { getPool, isMockMode, sql } = require('../config/database');
 const { DASHBOARD_MOCK, EVOLUCION_MOCK, COMPARATIVA_MOCK } = require('../config/mock-data');
 
+// abreviaturas de meses en español — las uso para la gráfica de evolución
 const NOMBRES_MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
+// devuelve el rango de fechas según el período seleccionado
+// el switch del trimestre me costó un rato entenderlo: Math.floor(mes / 3) da el índice del trimestre (0,1,2,3)
 const getPeriodoFechas = (periodo) => {
-  const hoy = new Date();
+  const hoy  = new Date();
   const anio = hoy.getFullYear();
-  const mes = hoy.getMonth();
+  const mes  = hoy.getMonth();
 
   switch (periodo) {
     case 'mes':
@@ -30,6 +33,8 @@ const getDashboard = async (periodo) => {
   const { desde, hasta } = getPeriodoFechas(periodo);
   const pool = getPool();
 
+  // paso las fechas como string porque SQL Server a veces tiene problemas
+  // con el tipo Date directamente dependiendo de la configuración regional del servidor
   const desdeStr = `${desde.getFullYear()}-${String(desde.getMonth() + 1).padStart(2, '0')}-${String(desde.getDate()).padStart(2, '0')}`;
   const hastaStr = `${hasta.getFullYear()}-${String(hasta.getMonth() + 1).padStart(2, '0')}-${String(hasta.getDate()).padStart(2, '0')}`;
 
@@ -78,6 +83,8 @@ const getEvolucionMensual = async (anio) => {
       ORDER BY mes
     `);
 
+  // la query solo devuelve los meses con facturas, así que relleno los vacíos con 0
+  // para que la gráfica siempre tenga los 12 meses
   const porMes = {};
   result.recordset.forEach(r => { porMes[r.mes] = r; });
 
@@ -92,6 +99,8 @@ const getEvolucionMensual = async (anio) => {
   });
 };
 
+// TODO: separar en dos queries distintas si en algún momento el rendimiento empeora
+// de momento meto todo en una sola para no hacer dos roundtrips al servidor
 const getComparativa = async () => {
   if (isMockMode()) return COMPARATIVA_MOCK;
 
@@ -120,6 +129,8 @@ const getComparativa = async () => {
   `);
 
   const r = result.recordset[0];
+
+  // si el mes/año anterior es 0 no puedo calcular variación — devuelvo null
   const variacionMes  = r.totalMesAnterior > 0
     ? parseFloat(((r.totalMesActual - r.totalMesAnterior) / r.totalMesAnterior * 100).toFixed(1))
     : null;

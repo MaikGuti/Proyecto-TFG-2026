@@ -1,63 +1,36 @@
 // src/middlewares/auth.middleware.js
-// Verifica el token JWT en cada petición protegida
 
 const jwt = require('jsonwebtoken');
 
-/**
- * Middleware principal de autenticación.
- * Verifica que el token JWT es válido.
- */
+// comprueba que la petición lleva un token JWT válido en la cabecera Authorization
 const authenticate = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const token = authHeader && authHeader.split(' ')[1]; // formato: "Bearer <token>"
 
   if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: 'Acceso denegado. Token no proporcionado.',
-    });
+    return res.status(401).json({ success: false, message: 'Token no proporcionado.' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, nombre, email, rol }
+    // guardo el usuario decodificado en req para usarlo en los controladores
+    req.usuario = decoded;
     next();
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Sesión expirada. Por favor, inicia sesión de nuevo.',
-      });
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, message: 'Sesión expirada, vuelve a iniciar sesión.' });
     }
-    return res.status(403).json({
-      success: false,
-      message: 'Token inválido.',
-    });
+    return res.status(403).json({ success: false, message: 'Token inválido.' });
   }
 };
 
-/**
- * Middleware de autorización por rol.
- * Uso: authorize('admin') o authorize('admin', 'operativo')
- */
-const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'No autenticado.',
-      });
-    }
-
-    if (!roles.includes(req.user.rol)) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permisos para acceder a este recurso.',
-      });
-    }
-
-    next();
-  };
+// middleware de autorización — se usa como authorize('admin') en las rutas
+// si el rol del usuario no está en la lista, devuelve 403
+const authorize = (...roles) => (req, res, next) => {
+  if (!req.usuario || !roles.includes(req.usuario.rol)) {
+    return res.status(403).json({ success: false, message: 'No tienes permisos para esto.' });
+  }
+  next();
 };
 
 module.exports = { authenticate, authorize };

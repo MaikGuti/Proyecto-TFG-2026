@@ -1,17 +1,12 @@
 // src/middlewares/error.middleware.js
-// Manejo centralizado de errores - captura todos los errores no controlados
+// tiene que registrarse siempre al final en index.js, después de todas las rutas
 
 const logger = require('../config/logger');
 
-/**
- * Middleware de manejo de errores global.
- * SIEMPRE debe ser el último middleware en registrarse.
- */
 const errorHandler = (err, req, res, next) => {
-  // Log del error
   logger.error(`${err.message} - ${req.method} ${req.originalUrl} - IP: ${req.ip}`, err);
 
-  // Error de validación de express-validator
+  // error de validación (express-validator)
   if (err.type === 'validation') {
     return res.status(400).json({
       success: false,
@@ -20,7 +15,7 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Error de base de datos SQL Server
+  // error de SQL Server — los códigos empiezan por E (ECONNREFUSED, ETIMEOUT...)
   if (err.code && err.code.startsWith('E')) {
     return res.status(503).json({
       success: false,
@@ -28,21 +23,16 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Error genérico
+  // en producción no muestro el mensaje real para no exponer detalles internos
   const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production'
+  const message    = process.env.NODE_ENV === 'production'
     ? 'Error interno del servidor'
     : err.message;
 
-  res.status(statusCode).json({
-    success: false,
-    message,
-  });
+  res.status(statusCode).json({ success: false, message });
 };
 
-/**
- * Middleware para rutas no encontradas (404)
- */
+// captura las rutas que no existen
 const notFound = (req, res) => {
   res.status(404).json({
     success: false,

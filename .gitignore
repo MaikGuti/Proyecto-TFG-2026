@@ -8,3 +8,8 @@ logs/
 data/usuarios.db
 data/usuarios.db-shm
 data/usuarios.db-wal
+
+# BD de usuarios en raíz (desarrollo)
+usuarios.db
+usuarios.db-shm
+usuarios.db-wal

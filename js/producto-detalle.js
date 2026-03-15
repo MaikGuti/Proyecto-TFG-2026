@@ -1,4 +1,5 @@
 // js/producto-detalle.js
+// carga el detalle de un producto a partir del parámetro ?ref= de la URL
 document.addEventListener('DOMContentLoaded', async () => {
   initSidebar('busqueda');
 
@@ -13,6 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const token = Auth.getToken();
     const headers = { Authorization: `Bearer ${token}` };
 
+    // lanzo las dos peticiones en paralelo para no esperar una detrás de la otra
     const [rP, rD] = await Promise.all([
       fetch(`${API_URL}/productos/${encodeURIComponent(ref)}`, { headers }),
       fetch(`${API_URL}/productos/${encodeURIComponent(ref)}/despiece`, { headers }),
@@ -203,7 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// ── Ver/ocultar todas las ubicaciones a la vez ─────────────────
+// abre o cierra todas las ubicaciones a la vez con un solo clic
 async function toggleTodasUbicaciones(btnTodas) {
   const botones = document.querySelectorAll('.btn-ver-ub[data-ref]');
   const hayAlgunaAbierta = [...botones].some(b => b.dataset.open === 'true');
@@ -222,7 +224,7 @@ async function toggleTodasUbicaciones(btnTodas) {
     : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Ver todas las ubicaciones`;
 }
 
-// ── Toggle ubicaciones por componente ──────────────────────────
+// carga las ubicaciones de un componente concreto (lazy — solo pide al servidor la primera vez)
 async function toggleUbicaciones(btn) {
   const ref     = btn.dataset.ref;
   const loaded  = btn.dataset.loaded === 'true';
@@ -294,7 +296,7 @@ async function toggleUbicaciones(btn) {
   }
 }
 
-// ── Ubicaciones para producto SIN despiece (div, no table row) ──
+// versión para productos sin despiece — el contenedor es un div, no una fila de tabla
 async function toggleUbicacionesProd(btn) {
   const ref       = btn.dataset.ref;
   const loaded    = btn.dataset.loaded === 'true';

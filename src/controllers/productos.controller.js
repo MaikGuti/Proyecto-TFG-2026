@@ -4,22 +4,16 @@ const { validationResult } = require('express-validator');
 const productosService = require('../services/productos.service');
 const logger = require('../config/logger');
 
-/**
- * GET /api/productos/buscar?q=término
- * Búsqueda por referencia o nombre parcial
- */
+// GET /api/productos/buscar?q=término
 const buscar = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array(),
-      });
+      return res.status(400).json({ success: false, errors: errors.array() });
     }
 
     const { q } = req.query;
-    logger.debug(`Búsqueda de producto: "${q}" por usuario: ${req.user.email}`);
+    logger.debug(`Búsqueda: "${q}" — usuario: ${req.usuario.email}`);
 
     const productos = await productosService.buscar(q);
 
@@ -29,15 +23,12 @@ const buscar = async (req, res, next) => {
       total: productos.length,
     });
 
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * GET /api/productos/autocompletar?q=término
- * Sugerencias rápidas para autocompletado
- */
+// GET /api/productos/autocompletar?q=término
 const autocompletar = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -48,109 +39,75 @@ const autocompletar = async (req, res, next) => {
     const { q } = req.query;
     const sugerencias = await productosService.autocompletar(q);
 
-    res.json({
-      success: true,
-      data: sugerencias,
-    });
+    res.json({ success: true, data: sugerencias });
 
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * GET /api/productos/:referencia
- * Detalle completo de un producto
- */
+// GET /api/productos/:referencia
 const detalle = async (req, res, next) => {
   try {
     const { referencia } = req.params;
-    logger.debug(`Detalle producto: ${referencia} por: ${req.user.email}`);
+    logger.debug(`Detalle: ${referencia} — usuario: ${req.usuario.email}`);
 
     const producto = await productosService.getByReferencia(referencia);
 
     if (!producto) {
       return res.status(404).json({
         success: false,
-        message: `Producto con referencia "${referencia}" no encontrado`,
+        message: `Producto "${referencia}" no encontrado`,
       });
     }
 
-    res.json({
-      success: true,
-      data: producto,
-    });
+    res.json({ success: true, data: producto });
 
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * GET /api/productos/:referencia/despiece
- * Componentes del producto
- */
+// GET /api/productos/:referencia/despiece
 const despiece = async (req, res, next) => {
   try {
     const { referencia } = req.params;
     const componentes = await productosService.getDespiece(referencia);
-
-    res.json({
-      success: true,
-      data: componentes,
-      total: componentes.length,
-    });
-
-  } catch (error) {
-    next(error);
+    res.json({ success: true, data: componentes, total: componentes.length });
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * GET /api/productos/alertas-stock
- * Artículos con stock por debajo del mínimo
- */
+// GET /api/productos/alertas-stock — artículos con stock por debajo del mínimo
 const alertasStock = async (_req, res, next) => {
   try {
     const alertas = await productosService.getAlertasStock();
-    res.json({
-      success: true,
-      data: alertas,
-      total: alertas.length,
-    });
-  } catch (error) {
-    next(error);
+    res.json({ success: true, data: alertas, total: alertas.length });
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * GET /api/productos/ubicaciones-despieces
- * Ubicaciones de almacén de todos los artículos con stock físico > 0
- */
+// GET /api/productos/ubicaciones-despieces
 const ubicacionesDespieces = async (_req, res, next) => {
   try {
     const datos = await productosService.getUbicacionesDespieces();
-    res.json({
-      success: true,
-      data: datos,
-      total: datos.length,
-    });
-  } catch (error) {
-    next(error);
+    res.json({ success: true, data: datos, total: datos.length });
+  } catch (err) {
+    next(err);
   }
 };
 
-/**
- * GET /api/productos/:referencia/ubicaciones
- * Ubicaciones de almacén para una referencia concreta (STOCK_FISICO > 0)
- */
+// GET /api/productos/:referencia/ubicaciones
+// versión filtrada por referencia — la llama el frontend en el detalle de producto
 const ubicacionesByRef = async (req, res, next) => {
   try {
     const { referencia } = req.params;
     const datos = await productosService.getUbicacionesByRef(referencia);
     res.json({ success: true, data: datos });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 

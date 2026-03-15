@@ -1,6 +1,5 @@
 // src/index.js
-// Punto de entrada de la aplicación
-// Arranca Express, registra middlewares y conecta a la BD
+// Punto de entrada — arranca Express, monta middlewares y conecta a las BDs
 
 require('dotenv').config();
 
@@ -15,108 +14,81 @@ const { connectERP, closeConnection, enableMockMode } = require('./config/databa
 const { initDB: initUsuariosDB } = require('./config/database-usuarios');
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
 
-// Rutas
-const authRoutes = require('./routes/auth.routes');
-const productosRoutes = require('./routes/productos.routes');
+const authRoutes        = require('./routes/auth.routes');
+const productosRoutes   = require('./routes/productos.routes');
 const facturacionRoutes = require('./routes/facturacion.routes');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// =============================================
-// MIDDLEWARES DE SEGURIDAD Y PARSEO
-// =============================================
+// --- seguridad ---
+// tuve que desactivar contentSecurityPolicy porque helmet bloqueaba
+// la carga de Chart.js desde cdnjs — con CSP activo daba error en consola
+app.use(helmet({ contentSecurityPolicy: false }));
 
-// Cabeceras de seguridad HTTP (relajamos CSP para que el frontend cargue Chart.js desde CDN)
-app.use(helmet({
-  contentSecurityPolicy: false,
-}));
-
-// Ficheros estáticos del frontend (login.html, pages/, js/, css/)
+// sirve los archivos del frontend (html, css, js)
 app.use(express.static(path.join(__dirname, '..')));
 
-// CORS (para accesos externos a la API)
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Parseo de JSON
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: false }));
 
-// Logging de peticiones HTTP (solo en desarrollo)
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// =============================================
-// RUTAS
-// =============================================
+// --- rutas ---
 
-// Health check - comprueba que el servidor está vivo
+// endpoint rápido para comprobar que el servidor responde
 app.get('/api/health', (req, res) => {
   res.json({
-    success: true,
-    message: '✅ Servidor TECSOLED ERP funcionando',
-    timestamp: new Date().toISOString(),
-    entorno: process.env.NODE_ENV,
+    ok: true,
+    msg: 'servidor funcionando',
+    ts: new Date().toISOString(),
   });
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/productos', productosRoutes);
+app.use('/api/auth',        authRoutes);
+app.use('/api/productos',   productosRoutes);
 app.use('/api/facturacion', facturacionRoutes);
 
-// =============================================
-// MANEJO DE ERRORES (siempre al final)
-// =============================================
+// el middleware de errores tiene que ir siempre al final
 app.use(notFound);
 app.use(errorHandler);
 
-// =============================================
-// ARRANQUE DEL SERVIDOR
-// =============================================
+// --- arranque ---
 
 const start = async () => {
   try {
-    // Inicializar BD local de usuarios (SQLite)
     initUsuariosDB();
     logger.info('✅ BD de usuarios (SQLite) inicializada');
 
-    // Intentar conectar al ERP
-    // Si no hay credenciales aún, lo saltamos con aviso
     if (process.env.DB_SERVER && process.env.DB_USER) {
       await connectERP();
     } else {
-      logger.warn('⚠️  Sin credenciales de BD. Arrancando en modo MOCK (datos de ejemplo para diseño)');
+      // sin credenciales de BD → modo MOCK con datos de ejemplo
+      // útil para desarrollo local y para que el compañero pueda maquetar
+      logger.warn('⚠️  Sin credenciales de BD. Modo MOCK activo.');
       enableMockMode();
     }
 
     app.listen(PORT, () => {
-      logger.info(`🚀 Servidor arrancado en http://localhost:${PORT}`);
+      logger.info(`🚀 Servidor en http://localhost:${PORT}`);
       logger.info(`📋 Entorno: ${process.env.NODE_ENV}`);
-      logger.info(`🔍 Health check: http://localhost:${PORT}/api/health`);
     });
 
-  } catch (error) {
-    logger.error('❌ Error al arrancar el servidor:', error);
+  } catch (err) {
+    logger.error('Error al arrancar:', err);
     process.exit(1);
   }
 };
 
-// Cierre limpio al apagar el servidor
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM recibido. Cerrando servidor...');
-  await closeConnection();
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  logger.info('SIGINT recibido. Cerrando servidor...');
-  await closeConnection();
-  process.exit(0);
-});
+process.on('SIGTERM', async () => { await closeConnection(); process.exit(0); });
+process.on('SIGINT',  async () => { await closeConnection(); process.exit(0); });
 
 start();

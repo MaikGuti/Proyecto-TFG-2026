@@ -1,19 +1,29 @@
 // js/auth.js
+// lo incluyo en todas las páginas — gestiona el token JWT en sessionStorage
+// uso sessionStorage en vez de localStorage para que la sesión no persista si cierran el navegador
+
 const API_URL = 'http://localhost:3000/api';
 
 const Auth = {
-  setToken:  (t) => sessionStorage.setItem('tsl_token', t),
-  getToken:  ()  => sessionStorage.getItem('tsl_token'),
-  setUser:   (u) => sessionStorage.setItem('tsl_user', JSON.stringify(u)),
-  getUser:   ()  => { const u = sessionStorage.getItem('tsl_user'); return u ? JSON.parse(u) : null; },
-  isLogged:  ()  => !!sessionStorage.getItem('tsl_token'),
-  clear:     ()  => { sessionStorage.removeItem('tsl_token'); sessionStorage.removeItem('tsl_user'); },
-  logout:    ()  => { Auth.clear(); window.location.href = '/login.html'; },
+  setToken: (t) => sessionStorage.setItem('tsl_token', t),
+  getToken: () => sessionStorage.getItem('tsl_token'),
+  setUser: (u) => sessionStorage.setItem('tsl_user', JSON.stringify(u)),
+  getUser: () => {
+    const u = sessionStorage.getItem('tsl_user');
+    return u ? JSON.parse(u) : null;
+  },
+  isLogged: () => !!sessionStorage.getItem('tsl_token'),
+  clear: () => {
+    sessionStorage.removeItem('tsl_token');
+    sessionStorage.removeItem('tsl_user');
+  },
+  logout: () => { Auth.clear(); window.location.href = '/login.html'; },
   requireAuth: () => { if (!Auth.isLogged()) window.location.href = '/login.html'; },
   redirectIfLogged: () => { if (Auth.isLogged()) window.location.href = '/pages/busqueda.html'; },
 };
 
-// ── Formulario de login ──────────────────────────────────────
+// el formulario de login solo existe en login.html
+// en el resto de páginas este bloque no hace nada
 const form = document.getElementById('loginForm');
 if (form) {
   Auth.redirectIfLogged();
@@ -32,6 +42,7 @@ if (form) {
     pwdEl.type = show ? 'text' : 'password';
   });
 
+  // quito el error del campo en cuanto el usuario empieza a escribir de nuevo
   [emailEl, pwdEl].forEach(el => el.addEventListener('input', () => {
     el.classList.remove('is-error');
     alert.classList.remove('show');
@@ -39,7 +50,7 @@ if (form) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = emailEl.value.trim();
+    const email    = emailEl.value.trim();
     const password = pwdEl.value;
     let ok = true;
 
@@ -67,6 +78,8 @@ if (form) {
 
       Auth.setToken(data.data.token);
       Auth.setUser(data.data.usuario);
+
+      // admin va al dashboard, el resto a búsqueda
       window.location.href = data.data.usuario.rol === 'admin'
         ? '/pages/dashboard.html'
         : '/pages/busqueda.html';
@@ -80,17 +93,17 @@ if (form) {
   });
 
   function setLoading(on) {
-    submitBtn.disabled = on;
-    btnText.style.display     = on ? 'none' : '';
+    submitBtn.disabled        = on;
+    btnText.style.display     = on ? 'none'  : '';
     btnSpinner.style.display  = on ? 'block' : 'none';
   }
 }
 
 if (typeof window !== 'undefined') { window.Auth = Auth; window.API_URL = API_URL; }
 
-// ── Modal cambio de contraseña ────────────────────────────────
+// modal para cambiar la contraseña — lo abro desde el sidebar
+// lo genero con JS para no tener que meterlo en cada HTML a mano
 Auth.openChangePwdModal = () => {
-  // Eliminar modal previo si existe
   const prev = document.getElementById('changePwdModal');
   if (prev) prev.remove();
 
@@ -133,6 +146,7 @@ Auth.openChangePwdModal = () => {
   const close = () => modal.remove();
   document.getElementById('cpwdClose').addEventListener('click', close);
   document.getElementById('cpwdCancel').addEventListener('click', close);
+  // cierro el modal también si hacen clic fuera del recuadro
   modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 
   document.getElementById('cpwdForm').addEventListener('submit', async (e) => {
@@ -144,7 +158,6 @@ Auth.openChangePwdModal = () => {
     const feedback = document.getElementById('cpwdFeedback');
     const btn      = document.getElementById('cpwdSubmit');
 
-    // Limpiar errores
     ['cpwdActualErr', 'cpwdNuevaErr', 'cpwdConfirmErr'].forEach(id => {
       document.getElementById(id).textContent = '';
     });

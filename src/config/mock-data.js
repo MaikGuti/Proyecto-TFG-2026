@@ -1,6 +1,6 @@
 // src/config/mock-data.js
-// Datos de ejemplo para modo MOCK (sin conexión al ERP).
-// Permite trabajar en maquetación y diseño sin credenciales de BD.
+// datos de ejemplo para cuando no hay conexión al ERP
+// los usé también para maquetar el frontend antes de tener el backend listo
 
 const PRODUCTOS_MOCK = [
   {
@@ -167,41 +167,42 @@ const EVOLUCION_MOCK = [
   { mes: 1,  nombreMes: 'Ene', total: 28100.00, numFacturas: 45 },
   { mes: 2,  nombreMes: 'Feb', total: 30680.70, numFacturas: 50 },
   { mes: 3,  nombreMes: 'Mar', total: 28450.80, numFacturas: 47 },
-  { mes: 4,  nombreMes: 'Abr', total: 0,        numFacturas: 0  },
-  { mes: 5,  nombreMes: 'May', total: 0,        numFacturas: 0  },
-  { mes: 6,  nombreMes: 'Jun', total: 0,        numFacturas: 0  },
-  { mes: 7,  nombreMes: 'Jul', total: 0,        numFacturas: 0  },
-  { mes: 8,  nombreMes: 'Ago', total: 0,        numFacturas: 0  },
-  { mes: 9,  nombreMes: 'Sep', total: 0,        numFacturas: 0  },
-  { mes: 10, nombreMes: 'Oct', total: 0,        numFacturas: 0  },
-  { mes: 11, nombreMes: 'Nov', total: 0,        numFacturas: 0  },
-  { mes: 12, nombreMes: 'Dic', total: 0,        numFacturas: 0  },
+  { mes: 4,  nombreMes: 'Abr', total: 0, numFacturas: 0 },
+  { mes: 5,  nombreMes: 'May', total: 0, numFacturas: 0 },
+  { mes: 6,  nombreMes: 'Jun', total: 0, numFacturas: 0 },
+  { mes: 7,  nombreMes: 'Jul', total: 0, numFacturas: 0 },
+  { mes: 8,  nombreMes: 'Ago', total: 0, numFacturas: 0 },
+  { mes: 9,  nombreMes: 'Sep', total: 0, numFacturas: 0 },
+  { mes: 10, nombreMes: 'Oct', total: 0, numFacturas: 0 },
+  { mes: 11, nombreMes: 'Nov', total: 0, numFacturas: 0 },
+  { mes: 12, nombreMes: 'Dic', total: 0, numFacturas: 0 },
 ];
 
 const COMPARATIVA_MOCK = {
   mes: {
-    actual:              { total: 28450.80, numFacturas: 47 },
-    anterior:            { total: 30680.70, numFacturas: 50 },
+    actual:   { total: 28450.80, numFacturas: 47 },
+    anterior: { total: 30680.70, numFacturas: 50 },
     variacionPorcentaje: -7.3,
-    tendencia:           'bajada',
+    tendencia: 'bajada',
   },
   anio: {
-    actual:              { total: 87230.50, numFacturas: 142 },
-    anterior:            { total: 95400.00, numFacturas: 158 },
+    actual:   { total: 87230.50, numFacturas: 142 },
+    anterior: { total: 95400.00, numFacturas: 158 },
     variacionPorcentaje: -8.6,
-    tendencia:           'bajada',
+    tendencia: 'bajada',
   },
 };
 
+// ubicaciones con stock físico > 0 — las uso para la tabla de despiece
 const UBICACIONES_DESPIECES_MOCK = [
-  { referencia: 'CHI-SMD-5630', nombre: 'Chip LED SMD 5630',        almacen: 'Almacén Principal', subalmacen: 'Componentes',  ubicacion: 'A-01-01', stock: 2400 },
-  { referencia: 'CHI-SMD-5630', nombre: 'Chip LED SMD 5630',        almacen: 'Almacén Principal', subalmacen: 'Componentes',  ubicacion: 'A-01-02', stock: 800  },
-  { referencia: 'DRV-INT-50W',  nombre: 'Driver interno 50W',       almacen: 'Almacén Principal', subalmacen: 'Electrónica',  ubicacion: 'B-02-03', stock: 45   },
-  { referencia: 'CUB-ALU-195',  nombre: 'Carcasa aluminio 195mm',   almacen: 'Almacén Principal', subalmacen: 'Mecánica',     ubicacion: 'C-03-01', stock: 120  },
-  { referencia: 'CUB-ALU-195',  nombre: 'Carcasa aluminio 195mm',   almacen: 'Almacén Secundario', subalmacen: 'Excedentes',  ubicacion: 'D-01-01', stock: 30   },
-  { referencia: 'DIF-PC-OPL',   nombre: 'Difusor policarbonato opal', almacen: 'Almacén Principal', subalmacen: 'Óptica',    ubicacion: 'C-04-02', stock: 95   },
-  { referencia: 'DRV-150W-24V', nombre: 'Driver LED 150W 24V',      almacen: 'Almacén Principal', subalmacen: 'Electrónica',  ubicacion: 'B-02-01', stock: 2    },
-  { referencia: 'CON-DALI-8CH', nombre: 'Controlador DALI 8 canales', almacen: 'Almacén Principal', subalmacen: 'Control',   ubicacion: 'B-05-01', stock: 3    },
+  { referencia: 'CHI-SMD-5630', nombre: 'Chip LED SMD 5630',          almacen: 'Almacén Principal',   subalmacen: 'Componentes', ubicacion: 'A-01-01', stock: 2400 },
+  { referencia: 'CHI-SMD-5630', nombre: 'Chip LED SMD 5630',          almacen: 'Almacén Principal',   subalmacen: 'Componentes', ubicacion: 'A-01-02', stock: 800  },
+  { referencia: 'DRV-INT-50W',  nombre: 'Driver interno 50W',         almacen: 'Almacén Principal',   subalmacen: 'Electrónica', ubicacion: 'B-02-03', stock: 45   },
+  { referencia: 'CUB-ALU-195',  nombre: 'Carcasa aluminio 195mm',     almacen: 'Almacén Principal',   subalmacen: 'Mecánica',    ubicacion: 'C-03-01', stock: 120  },
+  { referencia: 'CUB-ALU-195',  nombre: 'Carcasa aluminio 195mm',     almacen: 'Almacén Secundario',  subalmacen: 'Excedentes',  ubicacion: 'D-01-01', stock: 30   },
+  { referencia: 'DIF-PC-OPL',   nombre: 'Difusor policarbonato opal', almacen: 'Almacén Principal',   subalmacen: 'Óptica',      ubicacion: 'C-04-02', stock: 95   },
+  { referencia: 'DRV-150W-24V', nombre: 'Driver LED 150W 24V',        almacen: 'Almacén Principal',   subalmacen: 'Electrónica', ubicacion: 'B-02-01', stock: 2    },
+  { referencia: 'CON-DALI-8CH', nombre: 'Controlador DALI 8 canales', almacen: 'Almacén Principal',   subalmacen: 'Control',     ubicacion: 'B-05-01', stock: 3    },
 ];
 
 module.exports = {

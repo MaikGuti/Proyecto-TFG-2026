@@ -12,8 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsLabel   = document.getElementById('resultsLabel');
   const clearBtn       = document.getElementById('clearBtn');
 
+  // guardo el timeout del debounce aquí para poder cancelarlo en cada pulsación
   let debounce = null;
 
+  // no lanzo el autocompletado hasta que el usuario lleve 2 caracteres escritos
+  // y espero 260ms para no machacar el servidor con cada tecla
   searchInput.addEventListener('input', () => {
     clearTimeout(debounce);
     const q = searchInput.value.trim();
@@ -27,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   searchBtn.addEventListener('click', () => { acDrop.style.display = 'none'; buscar(searchInput.value.trim()); });
 
+  // cierro el dropdown si el usuario hace clic fuera del buscador
   document.addEventListener('click', e => {
     if (!e.target.closest('#acWrapper')) acDrop.style.display = 'none';
   });
@@ -54,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch { acDrop.style.display = 'none'; }
   }
 
+  // expongo selectAC en window porque lo llamo desde el onclick del HTML generado dinámicamente
   window.selectAC = (ref) => {
     searchInput.value = ref;
     acDrop.style.display = 'none';
@@ -66,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initialState.style.display = 'none';
     resultsSection.style.display = 'block';
     resultsLabel.textContent = 'Buscando...';
-    prodList.innerHTML = skeletons(3);
+    prodList.innerHTML = skeletons(3); // muestro skeletons mientras carga
 
     try {
       const res  = await fetch(`${API_URL}/productos/buscar?q=${encodeURIComponent(q)}`, {
@@ -76,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!data.success) throw new Error(data.message);
 
       const items = data.data;
+      // console.log('resultados:', items); // debug
 
       if (!items.length) {
         resultsLabel.innerHTML = `Sin resultados para <strong>"${q}"</strong>`;
@@ -95,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
       resultsLabel.innerHTML = `<strong>${items.length}</strong> resultado${items.length !== 1 ? 's' : ''} para "${q}"`;
 
       prodList.innerHTML = items.map(p => renderCard(p)).join('');
+
+      // añado el delay de animación por índice para que entren escalonados
       prodList.querySelectorAll('.prod-card').forEach((el, i) => {
         el.style.animationDelay = `${i * 0.04}s`;
         el.classList.add('fade-up');
@@ -130,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
   }
 
+  // genero N tarjetas skeleton para simular que hay contenido mientras carga
   function skeletons(n) {
     return Array.from({ length: n }, () => `
       <div class="prod-card" style="pointer-events:none">

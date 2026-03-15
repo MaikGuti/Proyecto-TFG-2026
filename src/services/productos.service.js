@@ -8,7 +8,9 @@ const {
   UBICACIONES_DESPIECES_MOCK,
 } = require('../config/mock-data');
 
-// Subconsulta de stock reutilizable (empresa 1, almacén 1)
+// estas dos subconsultas las uso en varias funciones — las saqué aquí arriba
+// para no repetirlas en cada query. Si cambia el ID de empresa o almacén
+// solo lo toco en un sitio
 const SUBQUERY_STOCK = `
   SELECT
     s.ID_ARTICULO,
@@ -26,7 +28,8 @@ const SUBQUERY_STOCK = `
     AND s.ID_ALMACEN = 1
 `;
 
-// Subconsulta de PVP 2024 reutilizable
+// TODO: parametrizar el año de la tarifa desde .env o calcularlo dinámicamente
+// de momento lo dejo hardcodeado a 2024 porque es lo que usa TECSOLED ahora mismo
 const SUBQUERY_PVP = `
   SELECT ta.ID_ARTICULO,
          MAX(ta.PRECIO_BASE_PVP) AS PRECIO_BASE_PVP
@@ -36,18 +39,19 @@ const SUBQUERY_PVP = `
   GROUP BY ta.ID_ARTICULO
 `;
 
+// campos comunes que devuelvo en búsqueda y detalle — así no los duplico
 const SELECT_CAMPOS = `
-  a.CODIGO_INTERNO                                                          AS referencia,
-  a.DESC_ARTICULO                                                           AS nombre,
-  a.item_description_technical                                              AS descripcion,
-  f.DESC_FAMILIA                                                            AS familia,
-  u.DESC_MEDIDA                                                             AS unidad,
-  pvp.PRECIO_BASE_PVP                                                       AS pvp,
-  COALESCE(stk.STOCK_ART_ALMACEN, 0)                                        AS stockAlmacen,
-  COALESCE(stk.CANT_PDTE_RECIBIR, 0)                                        AS pendienteRecibir,
-  COALESCE(stk.CANT_RESERVADA, 0)                                           AS reservada,
-  stk.STOCK_MINIMO                                                          AS stockMinimo,
-  COALESCE(stk.STOCK_DISPONIBLE_SIN_PDTE, 0)                                AS stock,
+  a.CODIGO_INTERNO               AS referencia,
+  a.DESC_ARTICULO                AS nombre,
+  a.item_description_technical   AS descripcion,
+  f.DESC_FAMILIA                 AS familia,
+  u.DESC_MEDIDA                  AS unidad,
+  pvp.PRECIO_BASE_PVP            AS pvp,
+  COALESCE(stk.STOCK_ART_ALMACEN, 0)          AS stockAlmacen,
+  COALESCE(stk.CANT_PDTE_RECIBIR, 0)          AS pendienteRecibir,
+  COALESCE(stk.CANT_RESERVADA, 0)             AS reservada,
+  stk.STOCK_MINIMO                            AS stockMinimo,
+  COALESCE(stk.STOCK_DISPONIBLE_SIN_PDTE, 0)  AS stock,
   COALESCE(stk.STOCK_ART_ALMACEN + stk.CANT_PDTE_RECIBIR - stk.CANT_RESERVADA, 0) AS stockDisponible
 `;
 
@@ -146,6 +150,9 @@ const getAlertasStock = async () => {
   return result.recordset;
 };
 
+// Esta query me costó bastante entender porque el ERP guarda los despieces
+// a través de versiones de artículo (PROD_ARTICULOS), no directamente en el maestro.
+// Básicamente: artículo → versión del padre → composiciones → versión del hijo → artículo componente
 const getDespiece = async (referencia) => {
   if (isMockMode()) return DESPIECE_MOCK;
   const pool = getPool();
@@ -214,6 +221,7 @@ const getUbicacionesDespieces = async () => {
   return result.recordset;
 };
 
+// versión por referencia — la llamo desde el detalle de producto para no cargar todo
 const getUbicacionesByRef = async (referencia) => {
   if (isMockMode()) {
     return UBICACIONES_DESPIECES_MOCK.filter(u => u.referencia === referencia);
