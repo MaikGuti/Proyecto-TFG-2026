@@ -13,3 +13,4 @@ data/usuarios.db-wal
 usuarios.db
 usuarios.db-shm
 usuarios.db-wal
+.claude/
